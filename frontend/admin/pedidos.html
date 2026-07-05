@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - El Portón Azul</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { margin: 0; background: #f4f7fc; display: flex; height: 100vh; }
+        .sidebar { width: 240px; background: #0A2E5C; color: white; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar h2 { color: #FFFFFF; margin-bottom: 30px; text-align: center; font-size: 20px; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
+        .sidebar a { color: #b0c4de; text-decoration: none; padding: 12px 15px; border-radius: 8px; margin: 5px 0; transition: 0.3s; display: flex; align-items: center; font-weight: 500; }
+        .sidebar a:hover, .sidebar a.active { background: #1A4A7A; color: #FFFFFF; border-left: 4px solid #D4AF37; }
+        .main { flex: 1; padding: 20px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(10, 46, 92, 0.08); margin-bottom: 20px; border-bottom: 3px solid #D4AF37; }
+        .header h3 { margin: 0; color: #0A2E5C; }
+        .content-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(10, 46, 92, 0.08); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eef2f7; }
+        th { background: #f8faff; font-weight: 600; color: #0A2E5C; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-pendiente { background: #ffeaa7; color: #d35400; }
+        .badge-en-cocina { background: #74b9ff; color: #0984e3; }
+        .badge-listo { background: #55efc4; color: #00b894; }
+        .badge-asignado { background: #a29bfe; color: #6c5ce7; }
+        .badge-en-camino { background: #fdcb6e; color: #e17055; }
+        .badge-llegó { background: #00cec9; color: #006266; }
+        .badge-entregado { background: #b2bec3; color: #2d3436; }
+        .btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; margin: 2px; transition: 0.2s; }
+        .btn-primary { background: #0A2E5C; color: white; }
+        .btn-primary:hover { background: #1A4A7A; }
+        .btn-gold { background: #D4AF37; color: #0A2E5C; }
+        .btn-gold:hover { background: #c4a031; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 46, 92, 0.6); justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 400px; max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid #D4AF37; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .modal-header h3 { margin: 0; color: #0A2E5C; }
+        .close { cursor: pointer; font-size: 24px; color: #bdc3c7; }
+        .close:hover { color: #e74c3c; }
+        select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #dce3ed; border-radius: 8px; background: #fafbfc; }
+        .btn-block { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>⚓ EL PORTÓN AZUL</h2>
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="pedidos.html" class="active">📦 Pedidos</a>
+        <a href="productos.html">🍤 Productos</a>
+        <div style="flex:1;"></div>
+        <a href="#" onclick="logout()" style="color: #e74c3c;">🚪 Salir</a>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h3>Gestión de Pedidos</h3>
+        </div>
+        <div class="content-card">
+            <table id="pedidosTable">
+                <thead>
+                    <tr><th>ID</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Repartidor</th><th>Acciones</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="assignModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Asignar Repartidor</h3><span class="close" onclick="closeModal()">&times;</span></div>
+            <p style="color: #7f8c8d;">Pedido ID: <strong style="color:#0A2E5C;"><span id="assignPedidoId"></span></strong></p>
+            <select id="repartidorSelect"><option value="">Seleccionar...</option></select>
+            <button class="btn-block btn-gold" onclick="confirmAssign()">Asignar</button>
+        </div>
+    </div>
+
+    <div id="stateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Actualizar Estado</h3><span class="close" onclick="closeStateModal()">&times;</span></div>
+            <p style="color: #7f8c8d;">Pedido ID: <strong style="color:#0A2E5C;"><span id="statePedidoId"></span></strong></p>
+            <select id="stateSelect">
+                <option value="1">Pendiente</option>
+                <option value="2">En cocina</option>
+                <option value="3">Listo</option>
+                <option value="4">Asignado</option>
+                <option value="5">En camino</option>
+                <option value="6">Llegó</option>
+                <option value="7">Entregado</option>
+            </select>
+            <button class="btn-block btn-primary" onclick="confirmState()">Actualizar</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPedidoId = null;
+        function logout() { localStorage.clear(); window.location.href = '../login.html'; }
+
+        async function loadPedidos() {
+            try {
+                const res = await fetch('/api/pedidos');
+                const pedidos = await res.json();
+                const tbody = document.querySelector('#pedidosTable tbody');
+                tbody.innerHTML = '';
+                
+                if (pedidos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#7f8c8d;">No hay pedidos registrados aún.</td></tr>`;
+                    return;
+                }
+
+                pedidos.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const estadoClase = p.nombre_estado ? p.nombre_estado.toLowerCase().replace(' ', '-') : 'pendiente';
+                    tr.innerHTML = `
+                        <td><strong>#${p.id_pedido}</strong></td>
+                        <td><strong>${p.cliente_nombre}</strong><br><small style="color:#7f8c8d;">${p.cliente_telefono || ''}</small></td>
+                        <td><strong style="color:#0A2E5C;">S/ ${parseFloat(p.total).toFixed(2)}</strong></td>
+                        <td><span class="badge badge-${estadoClase}">${p.nombre_estado}</span></td>
+                        <td>${p.repartidor_nombre || '<span style="color:#bdc3c7;">—</span>'}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="openStateModal(${p.id_pedido})">Estado</button>
+                            <button class="btn btn-gold" onclick="openAssignModal(${p.id_pedido})">Asignar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) { console.error("Error cargando pedidos:", error); }
+        }
+
+        async function loadRepartidores() {
+            try {
+                const select = document.getElementById('repartidorSelect');
+                select.innerHTML = '<option value="">Seleccionar...</option>';
+                const res = await fetch('/api/users/repartidores');
+                if (!res.ok) throw new Error('Error al cargar repartidores');
+                const repartidores = await res.json();
+                if (repartidores.length === 0) {
+                    select.innerHTML = '<option value="">No hay repartidores disponibles</option>';
+                    return;
+                }
+                repartidores.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id_usuario; 
+                    opt.textContent = r.nombre + ' (ID: ' + r.id_usuario + ')';
+                    select.appendChild(opt);
+                });
+            } catch (error) { console.error("Error cargando repartidores:", error); }
+        }
+
+        function openAssignModal(id) {
+            currentPedidoId = id;
+            document.getElementById('assignPedidoId').textContent = id;
+            document.getElementById('assignModal').style.display = 'flex';
+            loadRepartidores();
+        }
+
+        function closeModal() { document.getElementById('assignModal').style.display = 'none'; }
+
+        async function confirmAssign() {
+            const id_repartidor = document.getElementById('repartidorSelect').value;
+            if (!id_repartidor) return alert('Selecciona un repartidor');
+            try {
+                const res = await fetch(`/api/pedidos/${currentPedidoId}/asignar`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_repartidor: parseInt(id_repartidor) })
+                });
+                if (res.ok) { closeModal(); loadPedidos(); }
+                else { alert('Error al asignar repartidor'); }
+            } catch (error) { alert('Error de conexión'); }
+        }
+
+        function openStateModal(id) {
+            currentPedidoId = id;
+            document.getElementById('statePedidoId').textContent = id;
+            document.getElementById('stateModal').style.display = 'flex';
+        }
+
+        function closeStateModal() { document.getElementById('stateModal').style.display = 'none'; }
+
+        async function confirmState() {
+            const id_estado = document.getElementById('stateSelect').value;
+            try {
+                const res = await fetch(`/api/pedidos/${currentPedidoId}/estado`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_estado: parseInt(id_estado) })
+                });
+                if (res.ok) { closeStateModal(); loadPedidos(); }
+                else { alert('Error al actualizar el estado'); }
+            } catch (error) { alert('Error de conexión'); }
+        }
+
+        loadPedidos();
+        window.onclick = function(event) { 
+            if (event.target.className === 'modal') event.target.style.display = 'none'; 
+        }
+    </script>
+</body>
+</html>

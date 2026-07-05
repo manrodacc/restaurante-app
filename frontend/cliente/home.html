@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú - El Portón Azul</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { margin: 0; background: #f4f7fc; display: flex; flex-direction: column; height: 100vh; }
+        .header { background: #0A2E5C; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header h2 { margin: 0; color: #D4AF37; letter-spacing: 2px; }
+        .header button { background: transparent; border: 1px solid #D4AF37; color: #D4AF37; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-weight: 500; }
+        .header button:hover { background: #D4AF37; color: #0A2E5C; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .product-grid { flex: 3; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(10, 46, 92, 0.08); transition: 0.3s; display: flex; flex-direction: column; border: 1px solid #eef2f7; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(10, 46, 92, 0.15); }
+        .card-img { width: 100%; height: 160px; object-fit: cover; }
+        .card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
+        .card-body h4 { margin: 0 0 5px 0; font-size: 16px; color: #0A2E5C; }
+        .card-body p { margin: 0; font-size: 16px; font-weight: 700; color: #D4AF37; }
+        .btn-add { margin-top: auto; width: 100%; padding: 10px; background: #0A2E5C; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-add:hover { background: #1A4A7A; }
+        .cart-sidebar { flex: 1; background: white; padding: 20px; box-shadow: -4px 0 15px rgba(0,0,0,0.05); overflow-y: auto; min-width: 320px; display: flex; flex-direction: column; border-left: 3px solid #D4AF37; }
+        .cart-sidebar h3 { margin-top: 0; color: #0A2E5C; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
+        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f4f7fc; }
+        .cart-total { font-weight: 700; font-size: 20px; color: #0A2E5C; margin-top: 15px; text-align: right; }
+        .checkout-box { margin-top: auto; border-top: 2px solid #D4AF37; padding-top: 15px; }
+        .checkout-box input, .checkout-box select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #dce3ed; border-radius: 8px; background: #fafbfc; }
+        .btn-checkout { width: 100%; padding: 12px; background: #D4AF37; color: #0A2E5C; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-checkout:hover { background: #c4a031; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>⚓ EL PORTÓN AZUL</h2>
+        <div>
+            <button onclick="window.location.href='seguimiento.html'">📍 Mis Pedidos</button>
+            <button onclick="logout()">Salir</button>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="product-grid" id="productGrid"></div>
+        <div class="cart-sidebar">
+            <h3>🛒 Mi Pedido</h3>
+            <div id="cartItems" style="flex:1;"></div>
+            <div class="cart-total">Total: S/ <span id="cartTotal">0.00</span></div>
+            <div class="checkout-box">
+                <input type="text" id="direccion" placeholder="Dirección de entrega" required>
+                <select id="metodoPago">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Yape">Yape</option>
+                </select>
+                <button class="btn-checkout" onclick="confirmarPedido()">Confirmar Pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        let user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = '../login.html';
+
+        async function loadProducts() {
+            try {
+                const res = await fetch('/api/productos');
+                const productos = await res.json();
+                const grid = document.getElementById('productGrid');
+                grid.innerHTML = '';
+                
+                // Imágenes de mariscos por defecto
+                const imagenesMariscos = [
+                    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500',
+                    'https://images.unsplash.com/photo-1599974570974-3c9cee767a05?w=500',
+                    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=500',
+                    'https://images.unsplash.com/photo-1625938145744-e3806f7bb92e?w=500',
+                    'https://images.unsplash.com/photo-1544551763-46a8723e0e6e?w=500',
+                    'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500'
+                ];
+
+                productos.forEach((p, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    const imgSrc = p.imagen || imagenesMariscos[index % imagenesMariscos.length];
+                    
+                    div.innerHTML = `
+                        <img src="${imgSrc}" class="card-img" alt="${p.nombre}">
+                        <div class="card-body">
+                            <h4>${p.nombre}</h4>
+                            <p>S/ ${parseFloat(p.precio).toFixed(2)}</p>
+                            <button class="btn-add" onclick="addToCart(${p.id_producto}, '${p.nombre}', ${p.precio})">Agregar</button>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                });
+            } catch (error) { console.error(error); }
+        }
+
+        function addToCart(id, nombre, precio) {
+            const existing = cart.find(item => item.id_producto === id);
+            if (existing) existing.cantidad++;
+            else cart.push({ id_producto: id, nombre, precio, cantidad: 1 });
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            container.innerHTML = '';
+            let total = 0;
+            cart.forEach((item, index) => {
+                total += item.precio * item.cantidad;
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `<span><strong>${item.nombre}</strong> x${item.cantidad}</span>
+                    <span>S/ ${(item.precio * item.cantidad).toFixed(2)} 
+                        <button onclick="removeFromCart(${index})" style="color:#e74c3c; border:none; background:none; cursor:pointer;">✕</button>
+                    </span>`;
+                container.appendChild(div);
+            });
+            document.getElementById('cartTotal').textContent = total.toFixed(2);
+        }
+
+        function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
+
+        async function confirmarPedido() {
+            if (cart.length === 0) return alert('El carrito está vacío');
+            const direccion = document.getElementById('direccion').value;
+            const metodo_pago = document.getElementById('metodoPago').value;
+            if (!direccion) return alert('Ingresa una dirección');
+            const total = parseFloat(document.getElementById('cartTotal').textContent);
+
+            try {
+                const res = await fetch('/api/pedidos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_usuario: user.id_usuario, direccion, metodo_pago, total, items: cart })
+                });
+                if (res.ok) {
+                    alert('✅ ¡Pedido realizado con éxito!');
+                    cart = []; renderCart();
+                    window.location.href = 'seguimiento.html';
+                } else alert('❌ Error al crear el pedido');
+            } catch (error) { alert('❌ Error de conexión'); }
+        }
+
+        function logout() { localStorage.clear(); window.location.href = '../login.html'; }
+        loadProducts();
+    </script>
+</body>
+</html>

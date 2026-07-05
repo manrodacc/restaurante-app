@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Registro - El Portón Azul</title>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+	<style>
+		* { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+		body { margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background: #f4f4f4; }
+		.container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 380px; text-align: center; }
+		.logo { font-size: 24px; font-weight: 700; color: #2c3e50; margin-bottom: 20px; }
+		.logo span { color: #6c5ce7; }
+		input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+		input:focus, select:focus { border-color: #6c5ce7; }
+		button { width: 100%; padding: 12px; background: #6c5ce7; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; }
+		button:hover { background: #5a4bd1; }
+		.error { color: #e74c3c; font-size: 13px; margin-top: 10px; }
+		a { display: block; margin-top: 15px; text-decoration: none; color: #6c5ce7; font-weight: 500; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="logo">🍔 <span>El Portón Azul</span></div>
+		<h2>Registro</h2>
+		<form id="registerForm">
+			<input type="text" id="nombre" placeholder="Nombre completo" required>
+			<input type="email" id="correo" placeholder="Correo electrónico" required>
+			<input type="text" id="telefono" placeholder="Teléfono">
+			<input type="password" id="password" placeholder="Contraseña" required>
+			<select id="rol">
+				<option value="cliente">Cliente</option>
+				<option value="repartidor">Repartidor</option>
+			</select>
+			<button type="submit">Registrarse</button>
+			<div id="errorMsg" class="error"></div>
+		</form>
+		<a href="login.html">Ya tengo cuenta</a>
+	</div>
+
+	<script>
+		document.getElementById('registerForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const data = {
+				nombre: document.getElementById('nombre').value,
+				correo: document.getElementById('correo').value,
+				telefono: document.getElementById('telefono').value,
+				password: document.getElementById('password').value,
+				rol: document.getElementById('rol').value
+			};
+
+			const res = await fetch('/api/users/register', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(data)
+			});
+
+			if (res.ok) {
+				alert('Registro exitoso! Inicia sesión.');
+				window.location.href = 'login.html';
+			} else {
+				const err = await res.json();
+				document.getElementById('errorMsg').textContent = err.error || 'Error al registrarse';
+			}
+		});
+	</script>
+</body>
+</html>

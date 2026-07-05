@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento - Cliente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { margin: 0; background: #f4f4f4; }
+        .header { background: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; color: #6c5ce7; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
+        .status-badge { background: #6c5ce7; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; display: inline-block; }
+        #mapContainer { height: 300px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #ddd; z-index: 1; }
+        .btn { padding: 10px 20px; background: #00b894; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; text-decoration: none; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>📍 Seguimiento - Trujillo</h2>
+        <button onclick="window.location.href='home.html'" style="background:transparent; border:1px solid #bdc3c7; color:white; padding:6px 15px; border-radius:20px; cursor:pointer;">⬅ Volver al Menú</button>
+    </div>
+    <div class="container" id="pedidosContainer">
+        <div class="card"><p style="text-align:center;">Cargando tus pedidos...</p></div>
+    </div>
+
+    <script>
+        let user = JSON.parse(localStorage.getItem('user'));
+
+        // Función para inicializar el mapa (recibe el ID del contenedor)
+        function initMap(containerId, lat, lng) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Si el mapa ya existe, actualizamos
+            if (container._leaflet_map) {
+                if (lat && lng) {
+                    container._leaflet_map.setView([lat, lng], 14);
+                    if (container._leaflet_marker) {
+                        container._leaflet_map.removeLayer(container._leaflet_marker);
+                    }
+                    container._leaflet_marker = L.marker([lat, lng]).addTo(container._leaflet_map)
+                        .bindPopup("📍 Repartidor en camino").openPopup();
+                }
+                return;
+            }
+
+            // Crear el mapa por primera vez
+            const centerLat = lat || -8.109;
+            const centerLng = lng || -79.021;
+            const map = L.map(containerId).setView([centerLat, centerLng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            container._leaflet_map = map;
+            if (lat && lng) {
+                container._leaflet_marker = L.marker([lat, lng]).addTo(map)
+                    .bindPopup("📍 Repartidor en camino").openPopup();
+            } else {
+                container._leaflet_marker = L.marker([-8.109, -79.021]).addTo(map)
+                    .bindPopup("📍 Zona céntrica de Trujillo").openPopup();
+            }
+        }
+
+        async function loadPedidos() {
+            const res = await fetch(`/api/pedidos/user/${user.id_usuario}`);
+            const pedidos = await res.json();
+            const container = document.getElementById('pedidosContainer');
+            container.innerHTML = '';
+            
+            if (pedidos.length === 0) {
+                container.innerHTML = '<div class="card"><p style="text-align:center;">No tienes pedidos recientes.</p></div>';
+                return;
+            }
+            
+            pedidos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0;">Pedido #${p.id_pedido}</h3>
+                        <span class="status-badge">${p.nombre_estado}</span>
+                    </div>
+                    <p><strong>Total:</strong> S/ ${parseFloat(p.total).toFixed(2)}</p>
+                    <p><strong>Repartidor:</strong> ${p.repartidor_nombre || 'Buscando un repartidor...'}</p>
+                    <div id="mapContainer_${p.id_pedido}" style="height: 300px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #ddd; z-index: 1;"></div>
+                    <a href="home.html" class="btn">Hacer nuevo pedido</a>
+                `;
+                container.appendChild(div);
+                
+                // Inicializar el mapa con un pequeño retraso para asegurar que el div está en el DOM
+                setTimeout(() => {
+                    initMap(`mapContainer_${p.id_pedido}`, -8.109, -79.021);
+                }, 100);
+            });
+        }
+
+        loadPedidos();
+        setInterval(loadPedidos, 8000);
+    </script>
+</body>
+</html>
