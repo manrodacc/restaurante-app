@@ -123,7 +123,7 @@
 
 		async function actualizarEstado(id_pedido) {
 			const id_estado = document.getElementById(`estado_${id_pedido}`).value;
-			await fetch(`/api/pedidos/${id_pedido}/estado`, {
+			await fetch(`/api/pedidos/estado?id=${id_pedido}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ id_estado: parseInt(id_estado) })

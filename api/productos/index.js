@@ -5,20 +5,29 @@ module.exports = async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
+            const { id } = req.query;
+            
+            if (id) {
+                const { data: productos, error } = await supabase
+                    .from('productos')
+                    .select('*')
+                    .eq('id_producto', id)
+                    .limit(1);
+
+                if (error) throw error;
+                const producto = productos && productos[0];
+                if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
+                return res.json(producto);
+            }
+
             // Traer todos los productos que NO estén eliminados (estado != 0)
-            // Se excluye estado=0 para incluir también productos con estado=1 o NULL
             const { data: productos, error } = await supabase
                 .from('productos')
                 .select('*')
                 .neq('estado', 0)
                 .order('id_producto', { ascending: true });
 
-            if (error) {
-                console.error('❌ Error al obtener productos:', error);
-                throw error;
-            }
-
-            console.log(`✅ Productos encontrados: ${productos ? productos.length : 0}`);
+            if (error) throw error;
             return res.json(productos || []);
         }
 
@@ -41,7 +50,34 @@ module.exports = async function handler(req, res) {
 
             return res.status(201).json({ message: 'Producto creado', data });
         }
+        if (req.method === 'PUT') {
+            const { id } = req.query;
+            if (!id) return res.status(400).json({ error: 'ID requerido' });
+            
+            const { nombre, descripcion, precio, imagen } = req.body;
+            const { data, error } = await supabase
+                .from('productos')
+                .update({ nombre, descripcion, precio: parseFloat(precio), imagen })
+                .eq('id_producto', id)
+                .select();
 
+            if (error) throw error;
+            return res.json({ message: 'Producto actualizado', data });
+        }
+
+        if (req.method === 'DELETE') {
+            const { id } = req.query;
+            if (!id) return res.status(400).json({ error: 'ID requerido' });
+
+            const { data, error } = await supabase
+                .from('productos')
+                .update({ estado: 0 })
+                .eq('id_producto', id)
+                .select();
+
+            if (error) throw error;
+            return res.json({ message: 'Producto eliminado' });
+        }
         return res.status(405).json({ error: 'Método no permitido' });
     } catch (error) {
         console.error('❌ Error en /api/productos:', error);

@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
 
-    const { id_pedido } = req.query;
+    const { id: id_pedido } = req.query;
 
     console.log(`📦 [GET] /api/pedidos/${id_pedido}`);
 

@@ -125,7 +125,7 @@
         }
 
         async function openEditModal(id) {
-            const res = await fetch(`/api/productos/${id}`);
+            const res = await fetch(`/api/productos?id=${id}`);
             const p = await res.json();
             
             const id_producto = p.id_producto || p.id || '';
@@ -157,7 +157,7 @@
                 precio: parseFloat(precio),
                 imagen: document.getElementById('imagen').value
             };
-            const url = id ? `/api/productos/${id}` : '/api/productos';
+            const url = id ? `/api/productos?id=${id}` : '/api/productos';
             const method = id ? 'PUT' : 'POST';
 
             try {
@@ -175,7 +175,7 @@
         async function deleteProduct(id) {
             if(confirm('¿Eliminar este producto?')) {
                 try {
-                    const res = await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+                    const res = await fetch(`/api/productos?id=${id}`, { method: 'DELETE' });
                     const result = await res.json();
                     if (!res.ok) throw new Error(result.error || `HTTP ${res.status}`);
                     loadProducts();
