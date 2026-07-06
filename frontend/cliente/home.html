@@ -65,11 +65,21 @@
         if (!user) window.location.href = '../login.html';
 
         async function loadProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">Cargando productos...</p>';
             try {
                 const res = await fetch('/api/productos');
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
                 const productos = await res.json();
-                const grid = document.getElementById('productGrid');
                 grid.innerHTML = '';
+
+                if (!Array.isArray(productos) || productos.length === 0) {
+                    grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No hay productos disponibles en este momento.</p>';
+                    return;
+                }
                 
                 // Imágenes de mariscos por defecto
                 const imagenesMariscos = [
@@ -86,20 +96,23 @@
                     div.className = 'card';
                     const id_producto = p.id_producto || p.id || '';
                     const nombre = p.nombre || p.name || '';
-                    const precio = p.precio || p.price || 0;
+                    const precio = parseFloat(p.precio || p.price || 0);
                     const imgSrc = p.imagen || p.image || p.image_url || imagenesMariscos[index % imagenesMariscos.length];
                     
                     div.innerHTML = `
                         <img src="${imgSrc}" class="card-img" alt="${nombre}">
                         <div class="card-body">
                             <h4>${nombre}</h4>
-                            <p>S/ ${parseFloat(precio).toFixed(2)}</p>
-                            <button class="btn-add" onclick="addToCart('${id_producto}', '${nombre.replace(/'/g, \"\\\\'\")}', ${precio})">Agregar</button>
+                            <p>S/ ${precio.toFixed(2)}</p>
+                            <button class="btn-add" onclick="addToCart('${id_producto}', '${nombre.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${precio})">Agregar</button>
                         </div>
                     `;
                     grid.appendChild(div);
                 });
-            } catch (error) { console.error(error); }
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                grid.innerHTML = `<p style="text-align:center;color:#e74c3c;padding:40px;">❌ Error al cargar productos: ${error.message}<br><button onclick="loadProducts()" style="margin-top:10px;padding:8px 16px;background:#0A2E5C;color:white;border:none;border-radius:8px;cursor:pointer;">Reintentar</button></p>`;
+            }
         }
 
         function addToCart(id, nombre, precio) {

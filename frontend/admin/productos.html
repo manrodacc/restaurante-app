@@ -75,11 +75,22 @@
         function logout() { localStorage.clear(); window.location.href = '../login.html'; }
 
         async function loadProducts() {
-            const res = await fetch('/api/productos');
-            const productos = await res.json();
-            const tbody = document.querySelector('#productosTable tbody');
-            tbody.innerHTML = '';
-            productos.forEach(p => {
+            try {
+                const res = await fetch('/api/productos');
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
+                const productos = await res.json();
+                const tbody = document.querySelector('#productosTable tbody');
+                tbody.innerHTML = '';
+
+                if (!Array.isArray(productos) || productos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">No hay productos registrados</td></tr>';
+                    return;
+                }
+
+                productos.forEach(p => {
                 const id_producto = p.id_producto || p.id || '';
                 const nombre = p.nombre || p.name || '';
                 const descripcion = p.descripcion || p.description || '';
@@ -95,8 +106,12 @@
                         <button class="btn btn-danger" onclick="deleteProduct('${id_producto}')">Eliminar</button>
                     </td>
                 `;
-                tbody.appendChild(tr);
-            });
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                alert('❌ Error al cargar productos: ' + error.message);
+            }
         }
 
         function openCreateModal() {
@@ -132,22 +147,42 @@
 
         async function saveProduct() {
             const id = document.getElementById('editId').value;
+            const nombre = document.getElementById('nombre').value;
+            const precio = document.getElementById('precio').value;
+            if (!nombre || !precio) return alert('Nombre y precio son obligatorios');
+
             const data = {
-                nombre: document.getElementById('nombre').value,
+                nombre,
                 descripcion: document.getElementById('descripcion').value,
-                precio: parseFloat(document.getElementById('precio').value),
+                precio: parseFloat(precio),
                 imagen: document.getElementById('imagen').value
             };
             const url = id ? `/api/productos/${id}` : '/api/productos';
             const method = id ? 'PUT' : 'POST';
-            await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            closeModal(); loadProducts();
+
+            try {
+                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || `HTTP ${res.status}`);
+                closeModal();
+                loadProducts();
+            } catch (error) {
+                console.error('Error al guardar producto:', error);
+                alert('❌ Error al guardar: ' + error.message);
+            }
         }
 
         async function deleteProduct(id) {
             if(confirm('¿Eliminar este producto?')) {
-                await fetch(`/api/productos/${id}`, { method: 'DELETE' });
-                loadProducts();
+                try {
+                    const res = await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || `HTTP ${res.status}`);
+                    loadProducts();
+                } catch (error) {
+                    console.error('Error al eliminar producto:', error);
+                    alert('❌ Error al eliminar: ' + error.message);
+                }
             }
         }
 
