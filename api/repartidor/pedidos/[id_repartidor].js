@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
                 usuario:usuarios!pedidos_id_usuario_fkey (nombre, telefono, lat, lng),
                 estado:estado_pedido!pedidos_id_estado_fkey (nombre_estado)
             `)
-            .eq('id_repartidor', id_repartidor)
+            .eq('id_repartidor', parseInt(id_repartidor))
             .in('id_estado', [4, 5, 6])
             .order('fecha_pedido', { ascending: false });
 

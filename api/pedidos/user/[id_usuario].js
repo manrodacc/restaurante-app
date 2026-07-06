@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
                 usuario:usuarios!pedidos_id_usuario_fkey (nombre, lat, lng),
                 repartidor:usuarios!pedidos_id_repartidor_fkey (nombre, lat, lng)
             `)
-            .eq('id_usuario', id_usuario)
+            .eq('id_usuario', parseInt(id_usuario))
             .order('fecha_pedido', { ascending: false });
 
         if (error) throw error;
