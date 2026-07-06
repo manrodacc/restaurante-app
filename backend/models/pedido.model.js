@@ -31,7 +31,7 @@ const Pedido = {
                        e.nombre_estado
                 FROM pedidos p
                 JOIN usuarios u ON p.id_usuario = u.id_usuario
-                JOIN estados_pedido e ON p.id_estado = e.id_estado
+                JOIN estado_pedido e ON p.id_estado = e.id_estado
                 LEFT JOIN usuarios r ON p.id_repartidor = r.id_usuario
                 ORDER BY p.fecha_pedido DESC
             `;
@@ -57,7 +57,7 @@ const Pedido = {
                    r.nombre AS repartidor_nombre, r.lat AS rep_lat, r.lng AS rep_lng
             FROM pedidos p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
-            JOIN estados_pedido e ON p.id_estado = e.id_estado
+            JOIN estado_pedido e ON p.id_estado = e.id_estado
             LEFT JOIN usuarios r ON p.id_repartidor = r.id_usuario
             WHERE p.id_pedido = ?
         `, [id_pedido]);
@@ -79,7 +79,7 @@ const Pedido = {
                    r.nombre AS repartidor_nombre, r.lat AS rep_lat, r.lng AS rep_lng
             FROM pedidos p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
-            JOIN estados_pedido e ON p.id_estado = e.id_estado
+            JOIN estado_pedido e ON p.id_estado = e.id_estado
             LEFT JOIN usuarios r ON p.id_repartidor = r.id_usuario
             WHERE p.id_usuario = ?
             ORDER BY p.fecha_pedido DESC
@@ -97,7 +97,7 @@ const Pedido = {
             SELECT p.*, u.nombre AS cliente_nombre, u.telefono AS cliente_telefono, u.lat AS cliente_lat, u.lng AS cliente_lng, e.nombre_estado
             FROM pedidos p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
-            JOIN estados_pedido e ON p.id_estado = e.id_estado
+            JOIN estado_pedido e ON p.id_estado = e.id_estado
             WHERE p.id_repartidor = ? AND p.id_estado IN (4, 5, 6)
             ORDER BY p.fecha_pedido DESC
         `, [id_repartidor]);

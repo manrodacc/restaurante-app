@@ -155,6 +155,17 @@
             padding: 40px;
             color: #64748b;
         }
+        
+        .error-message {
+            background: #fff0f0;
+            border: 1px solid #ffcccc;
+            border-radius: 10px;
+            color: #d63031;
+            padding: 20px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -168,8 +179,16 @@
     </div>
 
     <script>
-        var user = JSON.parse(localStorage.getItem('user'));
-        if (!user) { window.location.href = '../login.html'; }
+        var user = null;
+        try {
+            user = JSON.parse(localStorage.getItem('user'));
+        } catch(e) {
+            console.error("Error al parsear el usuario", e);
+        }
+        
+        if (!user) { 
+            window.location.href = '../login.html'; 
+        }
 
         window.leafletMaps = window.leafletMaps || {};
 
@@ -211,8 +230,24 @@
         }
 
         function loadPedidos() {
-            fetch('/api/pedidos/user/' + (user.id_usuario || user.id))
-                .then(function(res) { return res.json(); })
+            var userId = user ? (user.id_usuario || user.id) : null;
+            if (!userId) {
+                var container = document.getElementById('pedidosContainer');
+                container.innerHTML = '<div class="card"><p style="text-align:center; color:#e74c3c;"><strong>⚠️ Error:</strong> Sesión de usuario inválida. Cierra sesión e ingresa nuevamente.</p></div>';
+                return;
+            }
+
+            fetch('/api/pedidos/user/' + userId)
+                .then(function(res) { 
+                    if (!res.ok) {
+                        return res.json().then(function(errData) {
+                            throw new Error(errData.error || 'Error del servidor (código ' + res.status + ')');
+                        }).catch(function() {
+                            throw new Error('Error de comunicación con el servidor (código ' + res.status + ')');
+                        });
+                    }
+                    return res.json(); 
+                })
                 .then(function(pedidos) {
                     var container = document.getElementById('pedidosContainer');
                     
@@ -221,16 +256,16 @@
                         // Limpiar mapas
                         for (var id in window.leafletMaps) {
                             if (window.leafletMaps.hasOwnProperty(id)) {
-                                window.leafletMaps[id].map.remove();
+                                try { window.leafletMaps[id].map.remove(); } catch(e){}
                             }
                         }
                         window.leafletMaps = {};
                         return;
                     }
 
-                    // Quitar cargador inicial
-                    var firstCard = container.querySelector('.card p');
-                    if (firstCard && firstCard.textContent.indexOf('Cargando') !== -1) {
+                    // Quitar cargador inicial o error previo
+                    var firstElement = container.firstElementChild;
+                    if (firstElement && (firstElement.innerHTML.indexOf('Cargando') !== -1 || firstElement.innerHTML.indexOf('Error') !== -1)) {
                         container.innerHTML = '';
                     }
 
@@ -240,10 +275,11 @@
                         var id_pedido = p.id_pedido;
                         activeIds[id_pedido] = true;
                         
-                        var clienteLat = parseFloat(p.cliente_lat) || -8.109;
-                        var clienteLng = parseFloat(p.cliente_lng) || -79.021;
-                        var repLat = p.rep_lat ? parseFloat(p.rep_lat) : null;
-                        var repLng = p.rep_lng ? parseFloat(p.rep_lng) : null;
+                        // Parse de coordenadas súper robusto (evitando NaN)
+                        var clienteLat = (p.cliente_lat && !isNaN(parseFloat(p.cliente_lat))) ? parseFloat(p.cliente_lat) : -8.109;
+                        var clienteLng = (p.cliente_lng && !isNaN(parseFloat(p.cliente_lng))) ? parseFloat(p.cliente_lng) : -79.021;
+                        var repLat = (p.rep_lat && !isNaN(parseFloat(p.rep_lat))) ? parseFloat(p.rep_lat) : null;
+                        var repLng = (p.rep_lng && !isNaN(parseFloat(p.rep_lng))) ? parseFloat(p.rep_lng) : null;
 
                         var card = document.getElementById('order_card_' + id_pedido);
 
@@ -272,8 +308,8 @@
                             `;
                             container.appendChild(card);
 
-                            // Inicializar Leaflet map con un mini timeout para que el div esté renderizado
-                            setTimeout(function() {
+                            // Inicializar Leaflet map
+                            try {
                                 var map = L.map('mapContainer_' + id_pedido);
                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                     attribution: '&copy; OpenStreetMap contributors'
@@ -286,7 +322,7 @@
                                 var riderMarker = null;
                                 var polyline = null;
 
-                                if (repLat && repLng) {
+                                if (repLat !== null && repLng !== null) {
                                     riderMarker = L.marker([repLat, repLng], {icon: motoIcon})
                                         .addTo(map)
                                         .bindPopup("🛵 Repartidor en camino");
@@ -309,7 +345,9 @@
                                     riderMarker: riderMarker,
                                     polyline: polyline
                                 };
-                            }, 150);
+                            } catch(mapErr) {
+                                console.error('Error al inicializar el mapa Leaflet para el pedido ' + id_pedido, mapErr);
+                            }
                         } else {
                             // Actualizar textos y clases en tarjeta existente
                             var badge = document.getElementById('badge_' + id_pedido);
@@ -325,40 +363,44 @@
                             // Actualizar Mapa Leaflet sin recrearlo
                             var mapObj = window.leafletMaps[id_pedido];
                             if (mapObj) {
-                                var map = mapObj.map;
+                                try {
+                                    var map = mapObj.map;
 
-                                // Mover marcador de cliente si cambió
-                                mapObj.clientMarker.setLatLng([clienteLat, clienteLng]);
+                                    // Mover marcador de cliente si cambió
+                                    mapObj.clientMarker.setLatLng([clienteLat, clienteLng]);
 
-                                if (repLat && repLng) {
-                                    if (!mapObj.riderMarker) {
-                                        mapObj.riderMarker = L.marker([repLat, repLng], {icon: motoIcon})
-                                            .addTo(map)
-                                            .bindPopup("🛵 Repartidor en camino");
+                                    if (repLat !== null && repLng !== null) {
+                                        if (!mapObj.riderMarker) {
+                                            mapObj.riderMarker = L.marker([repLat, repLng], {icon: motoIcon})
+                                                .addTo(map)
+                                                .bindPopup("🛵 Repartidor en camino");
 
-                                        mapObj.polyline = L.polyline([[clienteLat, clienteLng], [repLat, repLng]], {
-                                            color: '#6c5ce7',
-                                            weight: 4,
-                                            dashArray: '6, 12'
-                                        }).addTo(map);
+                                            mapObj.polyline = L.polyline([[clienteLat, clienteLng], [repLat, repLng]], {
+                                                color: '#6c5ce7',
+                                                weight: 4,
+                                                dashArray: '6, 12'
+                                            }).addTo(map);
+                                        } else {
+                                            mapObj.riderMarker.setLatLng([repLat, repLng]);
+                                            mapObj.polyline.setLatLngs([[clienteLat, clienteLng], [repLat, repLng]]);
+                                        }
+                                        
+                                        // Ajustar encuadre para ver ambos marcadores en pantalla
+                                        map.fitBounds([[clienteLat, clienteLng], [repLat, repLng]], {padding: [50, 50]});
                                     } else {
-                                        mapObj.riderMarker.setLatLng([repLat, repLng]);
-                                        mapObj.polyline.setLatLngs([[clienteLat, clienteLng], [repLat, repLng]]);
+                                        // Si no hay repartidor (o fue removido), quitar marcador y polyline si existían
+                                        if (mapObj.riderMarker) {
+                                            map.removeLayer(mapObj.riderMarker);
+                                            mapObj.riderMarker = null;
+                                        }
+                                        if (mapObj.polyline) {
+                                            map.removeLayer(mapObj.polyline);
+                                            mapObj.polyline = null;
+                                        }
+                                        map.setView([clienteLat, clienteLng], 15);
                                     }
-                                    
-                                    // Ajustar encuadre para ver ambos marcadores en pantalla
-                                    map.fitBounds([[clienteLat, clienteLng], [repLat, repLng]], {padding: [50, 50]});
-                                } else {
-                                    // Si no hay repartidor (o fue removido), quitar marcador y polyline si existían
-                                    if (mapObj.riderMarker) {
-                                        map.removeLayer(mapObj.riderMarker);
-                                        mapObj.riderMarker = null;
-                                    }
-                                    if (mapObj.polyline) {
-                                        map.removeLayer(mapObj.polyline);
-                                        mapObj.polyline = null;
-                                    }
-                                    map.setView([clienteLat, clienteLng], 15);
+                                } catch(mapUpErr) {
+                                    console.error('Error al actualizar el mapa del pedido ' + id_pedido, mapUpErr);
                                 }
                             }
                         }
@@ -373,7 +415,7 @@
                             if (!activeIds[orderId]) {
                                 c.remove();
                                 if (window.leafletMaps[orderId]) {
-                                    window.leafletMaps[orderId].map.remove();
+                                    try { window.leafletMaps[orderId].map.remove(); } catch(e){}
                                     delete window.leafletMaps[orderId];
                                 }
                             }
@@ -382,11 +424,13 @@
 
                 }).catch(function(err) {
                     console.error('Error al cargar pedidos:', err);
+                    var container = document.getElementById('pedidosContainer');
+                    container.innerHTML = `<div class="error-message">⚠️ Error al cargar tus pedidos: ${err.message}<br><button onclick="loadPedidos()" class="btn" style="margin-top: 15px; padding: 7px 15px;">🔄 Reintentar</button></div>`;
                 });
         }
 
         loadPedidos();
-        // Recargar cada 6 segundos para mantener un tracking dinámico y fresco
+        // Recargar cada 6 segundos para mantener un tracking dinámico
         setInterval(loadPedidos, 6000);
     </script>
 </body>
