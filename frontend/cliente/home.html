@@ -503,9 +503,6 @@
             
             container.appendChild(toast);
             
-            // Sonido opcional
-            // if (type === 'success') new Audio('https://actions.google.com/sounds/v1/ui/beep_short.ogg').play().catch(()=>{});
-
             setTimeout(() => {
                 toast.style.animation = 'toastOut 0.4s ease forwards';
                 setTimeout(() => toast.remove(), 400);
@@ -549,10 +546,9 @@
                     const precio = parseFloat(p.precio || p.price || 0);
                     const imagen = p.imagen || p.image || p.image_url || defaultImages[index % defaultImages.length];
 
-                    // Guardar en diccionario para acceso rápido (seguro contra XSS)
+                    // Guardar en diccionario
                     productosMap[id] = { id, nombre, precio, imagen };
 
-                    // Crear elementos DOM de forma segura (sin innerHTML para datos del usuario)
                     const card = document.createElement('div');
                     card.className = 'card';
 
@@ -561,15 +557,14 @@
                     
                     const defaultImgUrl = defaultImages[index % defaultImages.length];
                     const img = document.createElement('img');
-                    // Si viene vacío o es la cadena "null", usar el default
+                    
                     img.src = (!imagen || imagen === 'null') ? defaultImgUrl : imagen;
                     img.alt = nombre;
                     img.className = 'card-img';
                     img.loading = 'lazy';
                     
-                    // Si la imagen falla al cargar (URL rota), reemplazar con la imagen por defecto
                     img.onerror = function() {
-                        this.onerror = null; // Evita loop infinito
+                        this.onerror = null;
                         this.src = defaultImgUrl;
                     };
                     
@@ -588,7 +583,6 @@
                     btn.className = 'btn-add';
                     btn.innerHTML = '<span>➕</span> Agregar';
                     
-                    // Asignar el evento directamente en lugar de usar onclick inline
                     btn.addEventListener('click', () => {
                         addToCart(id);
                         showToast(`Se agregó ${nombre} al carrito`);
@@ -625,7 +619,6 @@
             } else {
                 cart.push({ 
                     id: p.id, 
-                    // Se envía al backend como id_producto para compatibilidad
                     id_producto: p.id, 
                     nombre: p.nombre, 
                     precio: p.precio, 
