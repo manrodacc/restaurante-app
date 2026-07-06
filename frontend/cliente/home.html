@@ -138,6 +138,9 @@
         
         .img-container {
             overflow: hidden;
+            height: 180px;
+            flex-shrink: 0;
+            width: 100%;
         }
 
         .card-body { 
@@ -556,11 +559,19 @@
                     const imgContainer = document.createElement('div');
                     imgContainer.className = 'img-container';
                     
+                    const defaultImgUrl = defaultImages[index % defaultImages.length];
                     const img = document.createElement('img');
-                    img.src = imagen;
+                    // Si viene vacío o es la cadena "null", usar el default
+                    img.src = (!imagen || imagen === 'null') ? defaultImgUrl : imagen;
                     img.alt = nombre;
                     img.className = 'card-img';
                     img.loading = 'lazy';
+                    
+                    // Si la imagen falla al cargar (URL rota), reemplazar con la imagen por defecto
+                    img.onerror = function() {
+                        this.onerror = null; // Evita loop infinito
+                        this.src = defaultImgUrl;
+                    };
                     
                     imgContainer.appendChild(img);
 
