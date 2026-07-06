@@ -64,6 +64,9 @@
         let user = JSON.parse(localStorage.getItem('user'));
         if (!user) window.location.href = '../login.html';
 
+        // Mapa de productos para acceso rápido sin pasar datos por onclick
+        let productosMap = {};
+
         async function loadProducts() {
             const grid = document.getElementById('productGrid');
             grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">Cargando productos...</p>';
@@ -92,21 +95,45 @@
                 ];
 
                 productos.forEach((p, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'card';
-                    const id_producto = p.id_producto || p.id || '';
+                    const id_producto = String(p.id_producto || p.id || index);
                     const nombre = p.nombre || p.name || '';
                     const precio = parseFloat(p.precio || p.price || 0);
                     const imgSrc = p.imagen || p.image || p.image_url || imagenesMariscos[index % imagenesMariscos.length];
-                    
-                    div.innerHTML = `
-                        <img src="${imgSrc}" class="card-img" alt="${nombre}">
-                        <div class="card-body">
-                            <h4>${nombre}</h4>
-                            <p>S/ ${precio.toFixed(2)}</p>
-                            <button class="btn-add" onclick="addToCart('${id_producto}', '${nombre.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${precio})">Agregar</button>
-                        </div>
-                    `;
+
+                    // Guardamos el producto en el mapa para no pasar datos por onclick
+                    productosMap[id_producto] = { id_producto, nombre, precio };
+
+                    // Creamos el DOM manualmente (sin innerHTML con datos del usuario)
+                    const div = document.createElement('div');
+                    div.className = 'card';
+
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = 'card-img';
+                    img.alt = nombre;
+
+                    const body = document.createElement('div');
+                    body.className = 'card-body';
+
+                    const h4 = document.createElement('h4');
+                    h4.textContent = nombre;  // textContent escapa automáticamente
+
+                    const pPrecio = document.createElement('p');
+                    pPrecio.textContent = `S/ ${precio.toFixed(2)}`;  // textContent seguro
+
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-add';
+                    btn.textContent = 'Agregar';
+                    btn.dataset.id = id_producto;  // guardamos solo el ID
+                    btn.addEventListener('click', function() {
+                        addToCart(this.dataset.id);
+                    });
+
+                    body.appendChild(h4);
+                    body.appendChild(pPrecio);
+                    body.appendChild(btn);
+                    div.appendChild(img);
+                    div.appendChild(body);
                     grid.appendChild(div);
                 });
             } catch (error) {
@@ -115,10 +142,12 @@
             }
         }
 
-        function addToCart(id, nombre, precio) {
+        function addToCart(id) {
+            const producto = productosMap[id];
+            if (!producto) return;
             const existing = cart.find(item => item.id_producto === id);
             if (existing) existing.cantidad++;
-            else cart.push({ id_producto: id, nombre, precio, cantidad: 1 });
+            else cart.push({ id_producto: producto.id_producto, nombre: producto.nombre, precio: producto.precio, cantidad: 1 });
             renderCart();
         }
 
@@ -130,10 +159,27 @@
                 total += item.precio * item.cantidad;
                 const div = document.createElement('div');
                 div.className = 'cart-item';
-                div.innerHTML = `<span><strong>${item.nombre}</strong> x${item.cantidad}</span>
-                    <span>S/ ${(item.precio * item.cantidad).toFixed(2)} 
-                        <button onclick="removeFromCart(${index})" style="color:#e74c3c; border:none; background:none; cursor:pointer;">✕</button>
-                    </span>`;
+
+                const spanNombre = document.createElement('span');
+                const strong = document.createElement('strong');
+                strong.textContent = item.nombre;
+                spanNombre.appendChild(strong);
+                spanNombre.appendChild(document.createTextNode(` x${item.cantidad}`));
+
+                const spanPrecio = document.createElement('span');
+                spanPrecio.textContent = `S/ ${(item.precio * item.cantidad).toFixed(2)} `;
+
+                const btnRemove = document.createElement('button');
+                btnRemove.textContent = '✕';
+                btnRemove.style.cssText = 'color:#e74c3c;border:none;background:none;cursor:pointer;';
+                btnRemove.dataset.index = index;
+                btnRemove.addEventListener('click', function() {
+                    removeFromCart(parseInt(this.dataset.index));
+                });
+
+                spanPrecio.appendChild(btnRemove);
+                div.appendChild(spanNombre);
+                div.appendChild(spanPrecio);
                 container.appendChild(div);
             });
             document.getElementById('cartTotal').textContent = total.toFixed(2);
@@ -158,8 +204,11 @@
                     alert('✅ ¡Pedido realizado con éxito!');
                     cart = []; renderCart();
                     window.location.href = 'seguimiento.html';
-                } else alert('❌ Error al crear el pedido');
-            } catch (error) { alert('❌ Error de conexión'); }
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    alert('❌ Error al crear el pedido: ' + (errData.error || 'Error desconocido'));
+                }
+            } catch (error) { alert('❌ Error de conexión: ' + error.message); }
         }
 
         function logout() { localStorage.clear(); window.location.href = '../login.html'; }
