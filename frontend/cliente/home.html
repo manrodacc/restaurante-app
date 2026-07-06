@@ -549,51 +549,31 @@
                     // Guardar en diccionario
                     productosMap[id] = { id, nombre, precio, imagen };
 
+                    const defaultImgUrl = defaultImages[index % defaultImages.length];
+                    const safeImgUrl = (!imagen || imagen === 'null') ? defaultImgUrl : imagen;
+
                     const card = document.createElement('div');
                     card.className = 'card';
-
-                    const imgContainer = document.createElement('div');
-                    imgContainer.className = 'img-container';
                     
-                    const defaultImgUrl = defaultImages[index % defaultImages.length];
-                    const img = document.createElement('img');
-                    
-                    img.src = (!imagen || imagen === 'null') ? defaultImgUrl : imagen;
-                    img.alt = nombre;
-                    img.className = 'card-img';
-                    img.loading = 'lazy';
-                    
-                    img.onerror = function() {
-                        this.onerror = null;
-                        this.src = defaultImgUrl;
-                    };
-                    
-                    imgContainer.appendChild(img);
+                    // Aseguramos la estructura en una sola pasada usando innerHTML y template literals.
+                    // Escapamos variables para prevenir errores visuales.
+                    card.innerHTML = `
+                        <div class="img-container">
+                            <img src="${safeImgUrl}" alt="${nombre.replace(/"/g, '&quot;')}" class="card-img" loading="lazy" onerror="this.onerror=null; this.src='${defaultImgUrl}';">
+                        </div>
+                        <div class="card-body">
+                            <h4>${nombre.replace(/</g, '&lt;')}</h4>
+                            <p>S/ ${precio.toFixed(2)}</p>
+                            <button class="btn-add" data-id="${id}"><span>➕</span> Agregar</button>
+                        </div>
+                    `;
 
-                    const body = document.createElement('div');
-                    body.className = 'card-body';
-
-                    const title = document.createElement('h4');
-                    title.textContent = nombre;
-
-                    const priceTag = document.createElement('p');
-                    priceTag.textContent = `S/ ${precio.toFixed(2)}`;
-
-                    const btn = document.createElement('button');
-                    btn.className = 'btn-add';
-                    btn.innerHTML = '<span>➕</span> Agregar';
-                    
-                    btn.addEventListener('click', () => {
-                        addToCart(id);
-                        showToast(`Se agregó ${nombre} al carrito`);
+                    // Asignamos el evento click al botón recién creado de manera segura (no en el string HTML)
+                    const btn = card.querySelector('.btn-add');
+                    btn.addEventListener('click', function() {
+                        addToCart(this.dataset.id);
+                        showToast('Se agregó ' + nombre + ' al carrito');
                     });
-
-                    body.appendChild(title);
-                    body.appendChild(priceTag);
-                    body.appendChild(btn);
-
-                    card.appendChild(imgContainer);
-                    card.appendChild(body);
 
                     grid.appendChild(card);
                 });
