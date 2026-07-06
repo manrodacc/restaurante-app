@@ -13,13 +13,13 @@
         .header button { background: transparent; border: 1px solid #D4AF37; color: #D4AF37; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-weight: 500; }
         .header button:hover { background: #D4AF37; color: #0A2E5C; }
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .product-grid { flex: 3; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .product-grid { flex: 3; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; align-content: start; }
         .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(10, 46, 92, 0.08); transition: 0.3s; display: flex; flex-direction: column; border: 1px solid #eef2f7; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(10, 46, 92, 0.15); }
-        .card-img { width: 100%; height: 160px; object-fit: cover; }
+        .card-img { width: 100%; height: 160px; object-fit: cover; display: block; }
         .card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
         .card-body h4 { margin: 0 0 5px 0; font-size: 16px; color: #0A2E5C; }
-        .card-body p { margin: 0; font-size: 16px; font-weight: 700; color: #D4AF37; }
+        .card-body p { margin: 0 0 10px 0; font-size: 16px; font-weight: 700; color: #D4AF37; }
         .btn-add { margin-top: auto; width: 100%; padding: 10px; background: #0A2E5C; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
         .btn-add:hover { background: #1A4A7A; }
         .cart-sidebar { flex: 1; background: white; padding: 20px; box-shadow: -4px 0 15px rgba(0,0,0,0.05); overflow-y: auto; min-width: 320px; display: flex; flex-direction: column; border-left: 3px solid #D4AF37; }
@@ -61,157 +61,146 @@
 
     <script>
         let cart = [];
+        let productosMap = {};
         let user = JSON.parse(localStorage.getItem('user'));
         if (!user) window.location.href = '../login.html';
 
-        // Mapa de productos para acceso rápido sin pasar datos por onclick
-        let productosMap = {};
+        const imagenesMariscos = [
+            'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500',
+            'https://images.unsplash.com/photo-1599974570974-3c9cee767a05?w=500',
+            'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=500',
+            'https://images.unsplash.com/photo-1625938145744-e3806f7bb92e?w=500',
+            'https://images.unsplash.com/photo-1544551763-46a8723e0e6e?w=500',
+            'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500'
+        ];
 
         async function loadProducts() {
             const grid = document.getElementById('productGrid');
-            grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">Cargando productos...</p>';
+            grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;grid-column:1/-1;">Cargando productos...</p>';
             try {
                 const res = await fetch('/api/productos');
                 if (!res.ok) {
                     const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.error || `HTTP ${res.status}`);
+                    throw new Error(errData.error || 'HTTP ' + res.status);
                 }
                 const productos = await res.json();
                 grid.innerHTML = '';
 
                 if (!Array.isArray(productos) || productos.length === 0) {
-                    grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No hay productos disponibles en este momento.</p>';
+                    grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;grid-column:1/-1;">No hay productos disponibles en este momento.</p>';
                     return;
                 }
-                
-                // Imágenes de mariscos por defecto
-                const imagenesMariscos = [
-                    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500',
-                    'https://images.unsplash.com/photo-1599974570974-3c9cee767a05?w=500',
-                    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=500',
-                    'https://images.unsplash.com/photo-1625938145744-e3806f7bb92e?w=500',
-                    'https://images.unsplash.com/photo-1544551763-46a8723e0e6e?w=500',
-                    'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500'
-                ];
 
-                productos.forEach((p, index) => {
-                    const id_producto = String(p.id_producto || p.id || index);
-                    const nombre = p.nombre || p.name || '';
-                    const precio = parseFloat(p.precio || p.price || 0);
-                    const imgSrc = p.imagen || p.image || p.image_url || imagenesMariscos[index % imagenesMariscos.length];
+                productos.forEach(function(p, index) {
+                    var id_producto = String(p.id_producto || p.id || index);
+                    var nombre = p.nombre || p.name || 'Sin nombre';
+                    var precio = parseFloat(p.precio || p.price || 0);
+                    var imgSrc = p.imagen || p.image || p.image_url || imagenesMariscos[index % imagenesMariscos.length];
 
-                    // Guardamos el producto en el mapa para no pasar datos por onclick
-                    productosMap[id_producto] = { id_producto, nombre, precio };
+                    // Guardamos el producto en el mapa para el evento click
+                    productosMap[id_producto] = { id_producto: id_producto, nombre: nombre, precio: precio };
 
-                    // Creamos el DOM manualmente (sin innerHTML con datos del usuario)
-                    const div = document.createElement('div');
+                    // Estructura de la tarjeta con innerHTML (el CSS aplica correctamente)
+                    var div = document.createElement('div');
                     div.className = 'card';
+                    div.innerHTML = '<img class="card-img"><div class="card-body"><h4></h4><p></p><button class="btn-add">Agregar</button></div>';
 
-                    const img = document.createElement('img');
-                    img.src = imgSrc;
-                    img.className = 'card-img';
-                    img.alt = nombre;
+                    // Asignamos datos de forma segura con textContent/src (no innerHTML con datos del usuario)
+                    div.querySelector('img').src = imgSrc;
+                    div.querySelector('img').alt = nombre;
+                    div.querySelector('h4').textContent = nombre;
+                    div.querySelector('p').textContent = 'S/ ' + precio.toFixed(2);
 
-                    const body = document.createElement('div');
-                    body.className = 'card-body';
-
-                    const h4 = document.createElement('h4');
-                    h4.textContent = nombre;  // textContent escapa automáticamente
-
-                    const pPrecio = document.createElement('p');
-                    pPrecio.textContent = `S/ ${precio.toFixed(2)}`;  // textContent seguro
-
-                    const btn = document.createElement('button');
-                    btn.className = 'btn-add';
-                    btn.textContent = 'Agregar';
-                    btn.dataset.id = id_producto;  // guardamos solo el ID
+                    var btn = div.querySelector('.btn-add');
+                    btn.dataset.id = id_producto;
                     btn.addEventListener('click', function() {
                         addToCart(this.dataset.id);
                     });
 
-                    body.appendChild(h4);
-                    body.appendChild(pPrecio);
-                    body.appendChild(btn);
-                    div.appendChild(img);
-                    div.appendChild(body);
                     grid.appendChild(div);
                 });
             } catch (error) {
                 console.error('Error al cargar productos:', error);
-                grid.innerHTML = `<p style="text-align:center;color:#e74c3c;padding:40px;">❌ Error al cargar productos: ${error.message}<br><button onclick="loadProducts()" style="margin-top:10px;padding:8px 16px;background:#0A2E5C;color:white;border:none;border-radius:8px;cursor:pointer;">Reintentar</button></p>`;
+                grid.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:40px;grid-column:1/-1;">❌ Error al cargar productos: ' + error.message + '<br><button onclick="loadProducts()" style="margin-top:10px;padding:8px 16px;background:#0A2E5C;color:white;border:none;border-radius:8px;cursor:pointer;">Reintentar</button></p>';
             }
         }
 
         function addToCart(id) {
-            const producto = productosMap[id];
+            var producto = productosMap[id];
             if (!producto) return;
-            const existing = cart.find(item => item.id_producto === id);
-            if (existing) existing.cantidad++;
-            else cart.push({ id_producto: producto.id_producto, nombre: producto.nombre, precio: producto.precio, cantidad: 1 });
+            var existing = cart.find(function(item) { return item.id_producto === id; });
+            if (existing) {
+                existing.cantidad++;
+            } else {
+                cart.push({ id_producto: producto.id_producto, nombre: producto.nombre, precio: producto.precio, cantidad: 1 });
+            }
             renderCart();
         }
 
         function renderCart() {
-            const container = document.getElementById('cartItems');
+            var container = document.getElementById('cartItems');
             container.innerHTML = '';
-            let total = 0;
-            cart.forEach((item, index) => {
+            var total = 0;
+            cart.forEach(function(item, index) {
                 total += item.precio * item.cantidad;
-                const div = document.createElement('div');
+                var div = document.createElement('div');
                 div.className = 'cart-item';
+                div.innerHTML = '<span></span><span></span>';
 
-                const spanNombre = document.createElement('span');
-                const strong = document.createElement('strong');
-                strong.textContent = item.nombre;
-                spanNombre.appendChild(strong);
-                spanNombre.appendChild(document.createTextNode(` x${item.cantidad}`));
+                div.querySelector('span:first-child').textContent = item.nombre + ' x' + item.cantidad;
+                var spanPrecio = div.querySelector('span:last-child');
+                spanPrecio.textContent = 'S/ ' + (item.precio * item.cantidad).toFixed(2) + ' ';
 
-                const spanPrecio = document.createElement('span');
-                spanPrecio.textContent = `S/ ${(item.precio * item.cantidad).toFixed(2)} `;
-
-                const btnRemove = document.createElement('button');
+                var btnRemove = document.createElement('button');
                 btnRemove.textContent = '✕';
                 btnRemove.style.cssText = 'color:#e74c3c;border:none;background:none;cursor:pointer;';
                 btnRemove.dataset.index = index;
                 btnRemove.addEventListener('click', function() {
                     removeFromCart(parseInt(this.dataset.index));
                 });
-
                 spanPrecio.appendChild(btnRemove);
-                div.appendChild(spanNombre);
-                div.appendChild(spanPrecio);
                 container.appendChild(div);
             });
             document.getElementById('cartTotal').textContent = total.toFixed(2);
         }
 
-        function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
 
         async function confirmarPedido() {
             if (cart.length === 0) return alert('El carrito está vacío');
-            const direccion = document.getElementById('direccion').value;
-            const metodo_pago = document.getElementById('metodoPago').value;
+            var direccion = document.getElementById('direccion').value;
+            var metodo_pago = document.getElementById('metodoPago').value;
             if (!direccion) return alert('Ingresa una dirección');
-            const total = parseFloat(document.getElementById('cartTotal').textContent);
+            var total = parseFloat(document.getElementById('cartTotal').textContent);
 
             try {
-                const res = await fetch('/api/pedidos', {
+                var res = await fetch('/api/pedidos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_usuario: user.id_usuario, direccion, metodo_pago, total, items: cart })
+                    body: JSON.stringify({ id_usuario: user.id_usuario, direccion: direccion, metodo_pago: metodo_pago, total: total, items: cart })
                 });
                 if (res.ok) {
                     alert('✅ ¡Pedido realizado con éxito!');
-                    cart = []; renderCart();
+                    cart = [];
+                    renderCart();
                     window.location.href = 'seguimiento.html';
                 } else {
-                    const errData = await res.json().catch(() => ({}));
+                    var errData = await res.json().catch(function() { return {}; });
                     alert('❌ Error al crear el pedido: ' + (errData.error || 'Error desconocido'));
                 }
-            } catch (error) { alert('❌ Error de conexión: ' + error.message); }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
         }
 
-        function logout() { localStorage.clear(); window.location.href = '../login.html'; }
+        function logout() {
+            localStorage.clear();
+            window.location.href = '../login.html';
+        }
+
         loadProducts();
     </script>
 </body>
