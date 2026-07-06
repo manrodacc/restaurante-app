@@ -80,14 +80,19 @@
             const tbody = document.querySelector('#productosTable tbody');
             tbody.innerHTML = '';
             productos.forEach(p => {
+                const id_producto = p.id_producto || p.id || '';
+                const nombre = p.nombre || p.name || '';
+                const descripcion = p.descripcion || p.description || '';
+                const precio = p.precio || p.price || 0;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${p.id_producto}</strong></td>
-                    <td><strong>${p.nombre}</strong><br><small style="color:#7f8c8d;">${p.descripcion || ''}</small></td>
-                    <td><strong style="color:#D4AF37;">S/ ${parseFloat(p.precio).toFixed(2)}</strong></td>
+                    <td><strong>${id_producto}</strong></td>
+                    <td><strong>${nombre}</strong><br><small style="color:#7f8c8d;">${descripcion}</small></td>
+                    <td><strong style="color:#D4AF37;">S/ ${parseFloat(precio).toFixed(2)}</strong></td>
                     <td>
-                        <button class="btn btn-primary" onclick="openEditModal(${p.id_producto})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteProduct(${p.id_producto})">Eliminar</button>
+                        <button class="btn btn-primary" onclick="openEditModal('${id_producto}')">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteProduct('${id_producto}')">Eliminar</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -107,12 +112,19 @@
         async function openEditModal(id) {
             const res = await fetch(`/api/productos/${id}`);
             const p = await res.json();
+            
+            const id_producto = p.id_producto || p.id || '';
+            const nombre = p.nombre || p.name || '';
+            const descripcion = p.descripcion || p.description || '';
+            const precio = p.precio || p.price || '';
+            const imagen = p.imagen || p.image || p.image_url || '';
+
             document.getElementById('modalTitle').textContent = 'Editar Producto';
-            document.getElementById('editId').value = p.id_producto;
-            document.getElementById('nombre').value = p.nombre;
-            document.getElementById('descripcion').value = p.descripcion || '';
-            document.getElementById('precio').value = p.precio;
-            document.getElementById('imagen').value = p.imagen || '';
+            document.getElementById('editId').value = id_producto;
+            document.getElementById('nombre').value = nombre;
+            document.getElementById('descripcion').value = descripcion;
+            document.getElementById('precio').value = precio;
+            document.getElementById('imagen').value = imagen;
             document.getElementById('productModal').style.display = 'flex';
         }
 
