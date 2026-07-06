@@ -408,8 +408,33 @@ document.getElementById('btnConfirmar').onclick = function() {
     });
 };
 
+// ── Geolocalización Cliente ──
+function initClientLocation() {
+    if (!user) return;
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            updateUserLocation(position.coords.latitude, position.coords.longitude);
+        }, function() {
+            updateUserLocation(-8.109, -79.021); // Coordenadas Trujillo centro por defecto
+        });
+    } else {
+        updateUserLocation(-8.109, -79.021);
+    }
+}
+
+function updateUserLocation(lat, lng) {
+    fetch('/api/users/location/' + (user.id_usuario || user.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: lat, lng: lng })
+    }).catch(function(err) {
+        console.error('Error actualizando ubicación del cliente:', err);
+    });
+}
+
 // ── Iniciar ──
 loadProducts();
+initClientLocation();
 </script>
 </body>
 </html>

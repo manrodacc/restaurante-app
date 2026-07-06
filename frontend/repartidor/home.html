@@ -3,37 +3,97 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Panel Repartidor</title>
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+	<title>Panel Repartidor - El Portón Azul</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 	<style>
-		* { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
-		body { margin: 0; background: #f4f4f4; }
-		.header { background: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-		.header h2 { margin: 0; color: #fdcb6e; }
-		.container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
-		.card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
-		.btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+		* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+		body { background: #eef2f7; min-height: 100vh; }
+		
+		.header {
+			background: #0A2E5C; color: #fff;
+			padding: 16px 32px; display: flex;
+			justify-content: space-between; align-items: center;
+			box-shadow: 0 2px 12px rgba(0,0,0,.15);
+			position: sticky; top: 0; z-index: 50;
+		}
+		.header h2 { color: #D4AF37; letter-spacing: 2px; font-size: 22px; }
+		.btn-logout {
+			background: #e74c3c; color: white; border: none;
+			padding: 7px 18px; border-radius: 22px;
+			cursor: pointer; font-weight: 600; font-size: 14px;
+			transition: background .25s;
+		}
+		.btn-logout:hover { background: #c0392b; }
+		
+		.container { max-width: 950px; margin: 30px auto; padding: 0 20px; }
+		
+		.card {
+			background: #fff; border-radius: 14px;
+			box-shadow: 0 4px 16px rgba(10,46,92,.08);
+			padding: 24px; margin-bottom: 24px;
+		}
+		
+		.sim-card {
+			background: #0A2E5C; color: white;
+			border-left: 5px solid #D4AF37;
+		}
+		
+		.btn {
+			padding: 10px 20px; border: none; border-radius: 10px;
+			cursor: pointer; font-weight: 700; font-size: 14px;
+			transition: background .25s; text-decoration: none;
+			display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+		}
 		.btn-green { background: #00b894; color: white; }
+		.btn-green:hover { background: #009475; }
 		.btn-blue { background: #0984e3; color: white; }
-		.btn-orange { background: #fdcb6e; color: #2d3436; }
-		.btn-red { background: #e74c3c; color: white; }
-		select { padding: 6px; border-radius: 6px; border: 1px solid #ddd; margin-right: 5px; }
-		#mapContainer { height: 350px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #ddd; z-index: 1; }
+		.btn-blue:hover { background: #076bba; }
+		.btn-orange { background: #D4AF37; color: #0A2E5C; }
+		.btn-orange:hover { background: #c4a031; }
+		.btn-whatsapp { background: #25D366; color: white; }
+		.btn-whatsapp:hover { background: #1ebd54; }
+
+		select {
+			padding: 10px; border-radius: 10px;
+			border: 2px solid #cbd5e1; background: #fff;
+			font-size: 14px; font-weight: 600; color: #2c3e50;
+			outline: none; transition: border-color 0.25s;
+		}
+		select:focus { border-color: #0A2E5C; }
+		
+		.custom-div-icon {
+			background: transparent;
+			border: none;
+		}
+
+		.info-row {
+			background: #f8fafc; padding: 15px;
+			border-radius: 10px; border: 1px solid #e2e8f0;
+			margin-bottom: 15px; font-size: 14px; color: #2c3e50;
+			line-height: 1.6;
+		}
+
+		.actions-row {
+			display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+			margin-top: 15px;
+		}
 	</style>
 </head>
 <body>
 	<div class="header">
-		<h2>🚚 Panel Repartidor - Trujillo</h2>
-		<button onclick="logout()" style="background:#e74c3c; color:white; border:none; padding:6px 15px; border-radius:20px; cursor:pointer;">Cerrar Sesión</button>
+		<h2>🚚 Panel Repartidor</h2>
+		<button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
 	</div>
 
 	<div class="container">
-		<div class="card" style="background:#6c5ce7; color:white;">
-			<h4 style="margin:0;">📍 Actualizar mi ubicación</h4>
-			<p style="margin:10px 0; font-size:14px; opacity:0.9;">Haz clic para enviar tu ubicación simulada en Trujillo al servidor</p>
-			<button class="btn btn-orange" onclick="simularUbicacion()" style="font-weight:bold;">📤 Enviar ubicación simulada</button>
+		<div class="card sim-card">
+			<h3 style="margin-bottom: 8px; color: #D4AF37;">📍 Sincronización de Ubicación</h3>
+			<p style="margin-bottom: 15px; font-size: 14px; opacity: 0.9;">Presiona para simular tu movimiento en tiempo real dentro de la ciudad de Trujillo. Los clientes verán tu marcador moverse en vivo.</p>
+			<button class="btn btn-orange" onclick="simularUbicacion()">📤 Actualizar mi Ubicación Simulada</button>
 		</div>
 
 		<div id="pedidosAsignados">
@@ -42,111 +102,225 @@
 	</div>
 
 	<script>
-		let user = JSON.parse(localStorage.getItem('user'));
+		var user = JSON.parse(localStorage.getItem('user'));
+		if (!user) { window.location.href = '../login.html'; }
 
-		// Función para inicializar el mapa en el div que ya existe en el DOM
-		function initMap(containerId, lat, lng) {
-			const container = document.getElementById(containerId);
-			if (!container) return; // Si el contenedor no existe, no hacer nada
+		// Ubicación actual del repartidor (leída del localStorage o predeterminada)
+		window.repartidorLat = parseFloat(user.lat) || -8.109;
+		window.repartidorLng = parseFloat(user.lng) || -79.021;
 
-			// Si el mapa ya está inicializado, solo actualizar vista
-			if (container._leaflet_map) {
-				if (lat && lng) {
-					container._leaflet_map.setView([lat, lng], 14);
-					if (container._leaflet_marker) {
-						container._leaflet_map.removeLayer(container._leaflet_marker);
+		window.leafletMaps = window.leafletMaps || {};
+
+		var houseIcon = L.divIcon({
+			html: '<div style="font-size: 24px; background: white; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); border: 2.5px solid #00b894;">🏠</div>',
+			className: 'custom-div-icon',
+			iconSize: [42, 42],
+			iconAnchor: [21, 21]
+		});
+
+		var motoIcon = L.divIcon({
+			html: '<div style="font-size: 24px; background: white; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); border: 2.5px solid #6c5ce7;">🛵</div>',
+			className: 'custom-div-icon',
+			iconSize: [42, 42],
+			iconAnchor: [21, 21]
+		});
+
+		function cargarPedidos() {
+			fetch('/api/repartidor/pedidos/' + (user.id_usuario || user.id))
+				.then(function(res) { return res.json(); })
+				.then(function(pedidos) {
+					var container = document.getElementById('pedidosAsignados');
+					
+					if (!pedidos || pedidos.length === 0) {
+						container.innerHTML = `<div class="card"><p style="text-align:center; color:#7f8c8d; font-size:18px; padding:40px 0;">🛵 No tienes pedidos activos asignados actualmente.</p></div>`;
+						// Limpiar mapas
+						for (var id in window.leafletMaps) {
+							if (window.leafletMaps.hasOwnProperty(id)) {
+								window.leafletMaps[id].map.remove();
+							}
+						}
+						window.leafletMaps = {};
+						return;
 					}
-					container._leaflet_marker = L.marker([lat, lng]).addTo(container._leaflet_map)
-						.bindPopup("📍 Repartidor en camino").openPopup();
+
+					// Quitar cargador inicial
+					var firstCard = container.querySelector('.card p');
+					if (firstCard && firstCard.textContent.indexOf('Cargando') !== -1) {
+						container.innerHTML = '';
+					}
+
+					var activeIds = {};
+
+					pedidos.forEach(function(p) {
+						var id_pedido = p.id_pedido;
+						activeIds[id_pedido] = true;
+						
+						var clienteLat = parseFloat(p.cliente_lat) || -8.109;
+						var clienteLng = parseFloat(p.cliente_lng) || -79.021;
+
+						var card = document.getElementById('order_card_' + id_pedido);
+
+						if (!card) {
+							// Crear nueva tarjeta
+							card = document.createElement('div');
+							card.id = 'order_card_' + id_pedido;
+							card.className = 'card';
+							card.innerHTML = `
+								<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+									<h3 style="margin:0; color:#0A2E5C; font-size:20px;">Pedido #${id_pedido} - ${p.cliente_nombre}</h3>
+									<span id="badge_${id_pedido}" style="background:#00b894; color:white; padding:5px 12px; border-radius:20px; font-size:13px; font-weight:700;">${p.nombre_estado}</span>
+								</div>
+								
+								<div class="info-row">
+									<p><strong>📍 Dirección de Entrega:</strong> ${p.direccion}</p>
+									<p><strong>💰 Total a Recibir/Cobrar:</strong> S/ ${parseFloat(p.total).toFixed(2)} (${p.metodo_pago})</p>
+									<p><strong>📞 Teléfono Cliente:</strong> ${p.cliente_telefono || '<span style="color:#94a3b8;">No disponible</span>'}</p>
+									
+									<div style="display:flex; gap:10px; margin-top:12px;">
+										${p.cliente_telefono ? `
+											<a href="tel:${p.cliente_telefono}" class="btn btn-green">📞 Llamar Cliente</a>
+											<a href="https://wa.me/51${p.cliente_telefono}?text=Hola%20${encodeURIComponent(p.cliente_nombre)},%20te%20escribe%20el%20repartidor%20de%20El%20Portón%20Azul%20en%20camino%20con%20tu%20pedido." target="_blank" class="btn btn-whatsapp">💬 WhatsApp</a>
+										` : ''}
+									</div>
+								</div>
+
+								<div id="mapContainer_${id_pedido}" style="height: 350px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #cbd5e1; z-index: 1;"></div>
+								
+								<div class="actions-row">
+									<strong style="color: #0A2E5C;">Actualizar Estado:</strong>
+									<select id="estado_${id_pedido}">
+										<option value="5" ${p.id_estado === 5 ? 'selected' : ''}>En camino</option>
+										<option value="6" ${p.id_estado === 6 ? 'selected' : ''}>Llegó</option>
+										<option value="7" ${p.id_estado === 7 ? 'selected' : ''}>Entregado</option>
+									</select>
+									<button class="btn btn-blue" onclick="actualizarEstado(${id_pedido})">Guardar Estado</button>
+								</div>
+							`;
+							container.appendChild(card);
+
+							// Inicializar mapa
+							setTimeout(function() {
+								var map = L.map('mapContainer_' + id_pedido);
+								L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+									attribution: '&copy; OpenStreetMap contributors'
+								}).addTo(map);
+
+								var clientMarker = L.marker([clienteLat, clienteLng], {icon: houseIcon})
+									.addTo(map)
+									.bindPopup("🏠 Cliente (Punto de entrega)");
+
+								var riderMarker = L.marker([window.repartidorLat, window.repartidorLng], {icon: motoIcon})
+									.addTo(map)
+									.bindPopup("🛵 Mi ubicación");
+
+								var polyline = L.polyline([[clienteLat, clienteLng], [window.repartidorLat, window.repartidorLng]], {
+									color: '#6c5ce7',
+									weight: 4,
+									dashArray: '6, 12'
+								}).addTo(map);
+
+								map.fitBounds([[clienteLat, clienteLng], [window.repartidorLat, window.repartidorLng]], {padding: [50, 50]});
+
+								window.leafletMaps[id_pedido] = {
+									map: map,
+									clientMarker: clientMarker,
+									riderMarker: riderMarker,
+									polyline: polyline
+								};
+							}, 150);
+						} else {
+							// Actualizar tarjeta existente
+							var badge = document.getElementById('badge_' + id_pedido);
+							badge.textContent = p.nombre_estado;
+
+							// Actualizar Mapa Leaflet
+							var mapObj = window.leafletMaps[id_pedido];
+							if (mapObj) {
+								mapObj.clientMarker.setLatLng([clienteLat, clienteLng]);
+								mapObj.riderMarker.setLatLng([window.repartidorLat, window.repartidorLng]);
+								mapObj.polyline.setLatLngs([[clienteLat, clienteLng], [window.repartidorLat, window.repartidorLng]]);
+								mapObj.map.fitBounds([[clienteLat, clienteLng], [window.repartidorLat, window.repartidorLng]], {padding: [50, 50]});
+							}
+						}
+					});
+
+					// Limpiar tarjetas antiguas
+					var cards = container.querySelectorAll('.card');
+					cards.forEach(function(c) {
+						var idMatch = c.id.match(/^order_card_(\d+)$/);
+						if (idMatch) {
+							var orderId = parseInt(idMatch[1]);
+							if (!activeIds[orderId]) {
+								c.remove();
+								if (window.leafletMaps[orderId]) {
+									window.leafletMaps[orderId].map.remove();
+									delete window.leafletMaps[orderId];
+								}
+							}
+						}
+					});
+
+				}).catch(function(err) {
+					console.error('Error al cargar pedidos del repartidor:', err);
+				});
+		}
+
+		function actualizarMapasRepartidor() {
+			for (var id in window.leafletMaps) {
+				if (window.leafletMaps.hasOwnProperty(id)) {
+					var mapObj = window.leafletMaps[id];
+					var clientLatLng = mapObj.clientMarker.getLatLng();
+					mapObj.riderMarker.setLatLng([window.repartidorLat, window.repartidorLng]);
+					mapObj.polyline.setLatLngs([clientLatLng, [window.repartidorLat, window.repartidorLng]]);
+					mapObj.map.fitBounds([clientLatLng, [window.repartidorLat, window.repartidorLng]], {padding: [50, 50]});
 				}
-				return;
-			}
-
-			// Crear el mapa por primera vez
-			const centerLat = lat || -8.109;
-			const centerLng = lng || -79.021;
-			const map = L.map(containerId).setView([centerLat, centerLng], 14);
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; OpenStreetMap contributors'
-			}).addTo(map);
-
-			// Guardar referencia al mapa y al marcador en el contenedor
-			container._leaflet_map = map;
-			if (lat && lng) {
-				container._leaflet_marker = L.marker([lat, lng]).addTo(map)
-					.bindPopup("📍 Repartidor en camino").openPopup();
-			} else {
-				container._leaflet_marker = L.marker([-8.109, -79.021]).addTo(map)
-					.bindPopup("📍 Zona céntrica de Trujillo").openPopup();
 			}
 		}
 
-		async function cargarPedidos() {
-			const res = await fetch(`/api/repartidor/pedidos/${user.id_usuario}`);
-			const pedidos = await res.json();
-			const container = document.getElementById('pedidosAsignados');
-			container.innerHTML = '';
-            
-			if (pedidos.length === 0) {
-				container.innerHTML = `<div class="card"><p style="text-align:center; color:#7f8c8d; font-size:18px; padding:40px 0;">🛵 No tienes pedidos activos asignados.</p></div>`;
-				return;
-			}
-            
-			pedidos.forEach(p => {
-				const div = document.createElement('div');
-				div.className = 'card';
-				div.innerHTML = `
-					<div style="display:flex; justify-content:space-between; align-items:center;">
-						<h3 style="margin:0;">Pedido #${p.id_pedido} - ${p.cliente_nombre}</h3>
-						<span style="background:#00b894; color:white; padding:3px 10px; border-radius:12px; font-size:13px;">${p.nombre_estado}</span>
-					</div>
-					<p><strong>Dirección:</strong> ${p.direccion}</p>
-					<div id="mapContainer_${p.id_pedido}" style="height: 350px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #ddd; z-index: 1;"></div>
-					<hr style="border-color:#f4f4f4;">
-					<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-						<select id="estado_${p.id_pedido}">
-							<option value="5">En camino</option>
-							<option value="6">Llegó</option>
-							<option value="7">Entregado</option>
-						</select>
-						<button class="btn btn-blue" onclick="actualizarEstado(${p.id_pedido})">Actualizar Estado</button>
-					</div>
-				`;
-				container.appendChild(div);
-                
-				// Inicializar el mapa pasando el ID único del contenedor
-				setTimeout(() => {
-					initMap(`mapContainer_${p.id_pedido}`, -8.109, -79.021);
-				}, 100);
-			});
-		}
-
-		async function actualizarEstado(id_pedido) {
-			const id_estado = document.getElementById(`estado_${id_pedido}`).value;
-			await fetch(`/api/pedidos?id=${id_pedido}&action=estado`, {
+		function actualizarEstado(id_pedido) {
+			var id_estado = document.getElementById('estado_' + id_pedido).value;
+			fetch('/api/pedidos?id=' + id_pedido + '&action=estado', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ id_estado: parseInt(id_estado) })
+			}).then(function(res) {
+				if (res.ok) {
+					cargarPedidos();
+				} else {
+					alert('No se pudo actualizar el estado del pedido.');
+				}
+			}).catch(function(e) {
+				console.error(e);
 			});
-			cargarPedidos();
 		}
 
-		async function simularUbicacion() {
-			const lat = -8.109 + (Math.random() - 0.5) * 0.02;
-			const lng = -79.021 + (Math.random() - 0.5) * 0.02;
+		function simularUbicacion() {
+			// Simular un movimiento en Trujillo
+			var lat = -8.109 + (Math.random() - 0.5) * 0.015;
+			var lng = -79.021 + (Math.random() - 0.5) * 0.015;
             
-			await fetch(`/api/users/location/${user.id_usuario}`, {
+			window.repartidorLat = lat;
+			window.repartidorLng = lng;
+            
+			user.lat = lat;
+			user.lng = lng;
+			localStorage.setItem('user', JSON.stringify(user));
+
+			fetch('/api/users/location/' + (user.id_usuario || user.id), {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ lat, lng })
-			});
-			alert('✅ Ubicación actualizada en el servidor (Trujillo)');
+				body: JSON.stringify({ lat: lat, lng: lng })
+			}).then(function() {
+				// Actualizar mapas localmente de inmediato para feedback instantáneo
+				actualizarMapasRepartidor();
+			}).catch(console.error);
 		}
 
 		function logout() { localStorage.clear(); window.location.href = '../login.html'; }
 
 		cargarPedidos();
-		setInterval(cargarPedidos, 10000);
+		// Cargar cada 8 segundos para evitar congestión pero mantener frescura
+		setInterval(cargarPedidos, 8000);
 	</script>
 </body>
 </html>

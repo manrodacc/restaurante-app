@@ -52,7 +52,8 @@ const Pedido = {
 
     getById: async (id_pedido) => {
         const [rows] = await db.query(`
-            SELECT p.*, u.nombre AS cliente_nombre, e.nombre_estado,
+            SELECT p.*, u.nombre AS cliente_nombre, u.telefono AS cliente_telefono, u.lat AS cliente_lat, u.lng AS cliente_lng,
+                   e.nombre_estado,
                    r.nombre AS repartidor_nombre, r.lat AS rep_lat, r.lng AS rep_lng
             FROM pedidos p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
@@ -73,8 +74,11 @@ const Pedido = {
     },
     getByUserId: async (id_usuario) => {
         const [rows] = await db.query(`
-            SELECT p.*, e.nombre_estado, r.nombre AS repartidor_nombre
+            SELECT p.*, e.nombre_estado,
+                   u.nombre AS cliente_nombre, u.lat AS cliente_lat, u.lng AS cliente_lng,
+                   r.nombre AS repartidor_nombre, r.lat AS rep_lat, r.lng AS rep_lng
             FROM pedidos p
+            JOIN usuarios u ON p.id_usuario = u.id_usuario
             JOIN estados_pedido e ON p.id_estado = e.id_estado
             LEFT JOIN usuarios r ON p.id_repartidor = r.id_usuario
             WHERE p.id_usuario = ?
@@ -90,7 +94,7 @@ const Pedido = {
     },
     getByRepartidor: async (id_repartidor) => {
         const [rows] = await db.query(`
-            SELECT p.*, u.nombre AS cliente_nombre, e.nombre_estado
+            SELECT p.*, u.nombre AS cliente_nombre, u.telefono AS cliente_telefono, u.lat AS cliente_lat, u.lng AS cliente_lng, e.nombre_estado
             FROM pedidos p
             JOIN usuarios u ON p.id_usuario = u.id_usuario
             JOIN estados_pedido e ON p.id_estado = e.id_estado

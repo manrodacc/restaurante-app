@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
             .from('pedidos')
             .select(`
                 *,
-                usuario:usuarios!pedidos_id_usuario_fkey (nombre),
+                usuario:usuarios!pedidos_id_usuario_fkey (nombre, telefono, lat, lng),
                 repartidor:usuarios!pedidos_id_repartidor_fkey (nombre, lat, lng),
                 estado:estado_pedido!pedidos_id_estado_fkey (nombre_estado)
             `)
@@ -41,6 +41,9 @@ module.exports = async function handler(req, res) {
         const formatted = {
             ...pedido,
             cliente_nombre: pedido.usuario?.nombre,
+            cliente_telefono: pedido.usuario?.telefono || null,
+            cliente_lat: pedido.usuario?.lat || null,
+            cliente_lng: pedido.usuario?.lng || null,
             repartidor_nombre: pedido.repartidor?.nombre || null,
             rep_lat: pedido.repartidor?.lat || null,
             rep_lng: pedido.repartidor?.lng || null,

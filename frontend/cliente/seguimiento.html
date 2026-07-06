@@ -3,105 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seguimiento - Cliente</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Seguimiento de Pedido - El Portón Azul</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
-        body { margin: 0; background: #f4f4f4; }
-        .header { background: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .header h2 { margin: 0; color: #6c5ce7; }
-        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
-        .status-badge { background: #6c5ce7; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; display: inline-block; }
-        #mapContainer { height: 300px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #ddd; z-index: 1; }
-        .btn { padding: 10px 20px; background: #00b894; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; text-decoration: none; display: inline-block; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #eef2f7; min-height: 100vh; }
+        
+        .header {
+            background: #0A2E5C; color: #fff;
+            padding: 16px 32px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,.15);
+            position: sticky; top: 0; z-index: 50;
+        }
+        .header h2 { color: #D4AF37; letter-spacing: 2px; font-size: 22px; }
+        .btn-back {
+            background: transparent; border: 2px solid #D4AF37;
+            color: #D4AF37; padding: 7px 18px; border-radius: 22px;
+            cursor: pointer; font-weight: 600; font-size: 14px;
+            transition: .25s; text-decoration: none;
+        }
+        .btn-back:hover { background: #D4AF37; color: #0A2E5C; }
+        
+        .container { max-width: 950px; margin: 30px auto; padding: 0 20px; }
+        
+        .card {
+            background: #fff; border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(10,46,92,.08);
+            padding: 24px; margin-bottom: 24px;
+            border-top: 4px solid #D4AF37;
+        }
+        
+        .status-badge {
+            padding: 5px 14px; border-radius: 20px;
+            font-size: 13px; font-weight: 700;
+            display: inline-block; text-transform: uppercase;
+        }
+        .badge-1 { background: #ffeaa7; color: #d35400; }
+        .badge-2 { background: #74b9ff; color: #0984e3; }
+        .badge-3 { background: #55efc4; color: #00b894; }
+        .badge-4 { background: #a29bfe; color: #6c5ce7; }
+        .badge-5 { background: #fdcb6e; color: #e17055; }
+        .badge-6 { background: #00cec9; color: #006266; }
+        .badge-7 { background: #b2bec3; color: #2d3436; }
+        
+        .btn {
+            display: inline-block; padding: 10px 20px;
+            background: #0A2E5C; color: white;
+            font-weight: 700; border-radius: 10px;
+            text-decoration: none; font-size: 14px;
+            transition: background 0.25s; border: none; cursor: pointer;
+        }
+        .btn:hover { background: #1A4A7A; }
+
+        /* Stepper styles */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 16px 8px;
+            position: relative;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .step {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border: 2px solid #cbd5e1;
+        }
+        .step-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #64748b;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .step.active .step-icon {
+            background: #D4AF37;
+            color: #0A2E5C;
+            border-color: #0A2E5C;
+            transform: scale(1.15);
+            box-shadow: 0 4px 10px rgba(212,175,55,0.3);
+        }
+        .step.active .step-label {
+            color: #0A2E5C;
+        }
+        .step.current .step-icon {
+            background: #6c5ce7;
+            color: white;
+            border-color: #6c5ce7;
+            animation: pulse 1.5s infinite;
+        }
+        .step.current .step-label {
+            color: #6c5ce7;
+            font-weight: 800;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1.15); box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.5); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(108, 92, 231, 0); }
+            100% { transform: scale(1.15); box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); }
+        }
+        
+        .step:not(:first-child)::after {
+            content: '';
+            position: absolute;
+            top: 36px;
+            right: calc(50% + 20px);
+            left: calc(-50% + 20px);
+            height: 4px;
+            background: #cbd5e1;
+            z-index: -1;
+            transition: background 0.3s ease;
+        }
+        .step.active:not(:first-child)::after {
+            background: #0A2E5C;
+        }
+
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+        
+        #pedidosContainer {
+            min-height: 200px;
+        }
+
+        .no-orders {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>📍 Seguimiento - Trujillo</h2>
-        <button onclick="window.location.href='home.html'" style="background:transparent; border:1px solid #bdc3c7; color:white; padding:6px 15px; border-radius:20px; cursor:pointer;">⬅ Volver al Menú</button>
+        <h2>⚓ EL PORTÓN AZUL</h2>
+        <a href="home.html" class="btn-back">⬅ Volver al Menú</a>
     </div>
+    
     <div class="container" id="pedidosContainer">
         <div class="card"><p style="text-align:center;">Cargando tus pedidos...</p></div>
     </div>
 
     <script>
-        let user = JSON.parse(localStorage.getItem('user'));
+        var user = JSON.parse(localStorage.getItem('user'));
+        if (!user) { window.location.href = '../login.html'; }
 
-        // Función para inicializar el mapa (recibe el ID del contenedor)
-        function initMap(containerId, lat, lng) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
+        window.leafletMaps = window.leafletMaps || {};
 
-            // Si el mapa ya existe, actualizamos
-            if (container._leaflet_map) {
-                if (lat && lng) {
-                    container._leaflet_map.setView([lat, lng], 14);
-                    if (container._leaflet_marker) {
-                        container._leaflet_map.removeLayer(container._leaflet_marker);
-                    }
-                    container._leaflet_marker = L.marker([lat, lng]).addTo(container._leaflet_map)
-                        .bindPopup("📍 Repartidor en camino").openPopup();
-                }
-                return;
-            }
+        var houseIcon = L.divIcon({
+            html: '<div style="font-size: 24px; background: white; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); border: 2.5px solid #00b894;">🏠</div>',
+            className: 'custom-div-icon',
+            iconSize: [42, 42],
+            iconAnchor: [21, 21]
+        });
 
-            // Crear el mapa por primera vez
-            const centerLat = lat || -8.109;
-            const centerLng = lng || -79.021;
-            const map = L.map(containerId).setView([centerLat, centerLng], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+        var motoIcon = L.divIcon({
+            html: '<div style="font-size: 24px; background: white; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); border: 2.5px solid #6c5ce7;">🛵</div>',
+            className: 'custom-div-icon',
+            iconSize: [42, 42],
+            iconAnchor: [21, 21]
+        });
 
-            container._leaflet_map = map;
-            if (lat && lng) {
-                container._leaflet_marker = L.marker([lat, lng]).addTo(map)
-                    .bindPopup("📍 Repartidor en camino").openPopup();
-            } else {
-                container._leaflet_marker = L.marker([-8.109, -79.021]).addTo(map)
-                    .bindPopup("📍 Zona céntrica de Trujillo").openPopup();
-            }
+        function getStepperHTML(id_estado) {
+            var states = [
+                { id: 1, icon: '⏳', label: 'Pendiente' },
+                { id: 2, icon: '🍳', label: 'Cocina' },
+                { id: 3, icon: '📦', label: 'Listo' },
+                { id: 4, icon: '🏍️', label: 'Asignado' },
+                { id: 5, icon: '🚚', label: 'En camino' },
+                { id: 6, icon: '📍', label: 'Llegó' },
+                { id: 7, icon: '✅', label: 'Entregado' }
+            ];
+
+            return states.map(function(s) {
+                var isActive = id_estado >= s.id;
+                var isCurrent = id_estado === s.id;
+                return `
+                    <div class="step ${isActive ? 'active' : ''} ${isCurrent ? 'current' : ''}">
+                        <div class="step-icon">${s.icon}</div>
+                        <div class="step-label">${s.label}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        async function loadPedidos() {
-            const res = await fetch(`/api/pedidos/user/${user.id_usuario}`);
-            const pedidos = await res.json();
-            const container = document.getElementById('pedidosContainer');
-            container.innerHTML = '';
-            
-            if (pedidos.length === 0) {
-                container.innerHTML = '<div class="card"><p style="text-align:center;">No tienes pedidos recientes.</p></div>';
-                return;
-            }
-            
-            pedidos.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 style="margin:0;">Pedido #${p.id_pedido}</h3>
-                        <span class="status-badge">${p.nombre_estado}</span>
-                    </div>
-                    <p><strong>Total:</strong> S/ ${parseFloat(p.total).toFixed(2)}</p>
-                    <p><strong>Repartidor:</strong> ${p.repartidor_nombre || 'Buscando un repartidor...'}</p>
-                    <div id="mapContainer_${p.id_pedido}" style="height: 300px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #ddd; z-index: 1;"></div>
-                    <a href="home.html" class="btn">Hacer nuevo pedido</a>
-                `;
-                container.appendChild(div);
-                
-                // Inicializar el mapa con un pequeño retraso para asegurar que el div está en el DOM
-                setTimeout(() => {
-                    initMap(`mapContainer_${p.id_pedido}`, -8.109, -79.021);
-                }, 100);
-            });
+        function loadPedidos() {
+            fetch('/api/pedidos/user/' + (user.id_usuario || user.id))
+                .then(function(res) { return res.json(); })
+                .then(function(pedidos) {
+                    var container = document.getElementById('pedidosContainer');
+                    
+                    if (!pedidos || pedidos.length === 0) {
+                        container.innerHTML = '<div class="card"><p class="no-orders">No tienes pedidos activos o recientes.</p></div>';
+                        // Limpiar mapas
+                        for (var id in window.leafletMaps) {
+                            if (window.leafletMaps.hasOwnProperty(id)) {
+                                window.leafletMaps[id].map.remove();
+                            }
+                        }
+                        window.leafletMaps = {};
+                        return;
+                    }
+
+                    // Quitar cargador inicial
+                    var firstCard = container.querySelector('.card p');
+                    if (firstCard && firstCard.textContent.indexOf('Cargando') !== -1) {
+                        container.innerHTML = '';
+                    }
+
+                    var activeIds = {};
+
+                    pedidos.forEach(function(p) {
+                        var id_pedido = p.id_pedido;
+                        activeIds[id_pedido] = true;
+                        
+                        var clienteLat = parseFloat(p.cliente_lat) || -8.109;
+                        var clienteLng = parseFloat(p.cliente_lng) || -79.021;
+                        var repLat = p.rep_lat ? parseFloat(p.rep_lat) : null;
+                        var repLng = p.rep_lng ? parseFloat(p.rep_lng) : null;
+
+                        var card = document.getElementById('order_card_' + id_pedido);
+
+                        if (!card) {
+                            // Crear nueva tarjeta
+                            card = document.createElement('div');
+                            card.id = 'order_card_' + id_pedido;
+                            card.className = 'card';
+                            card.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                                    <h3 style="margin:0; color:#0A2E5C; font-size:20px;">Pedido #${id_pedido}</h3>
+                                    <span id="badge_${id_pedido}" class="status-badge badge-${p.id_estado}">${p.nombre_estado}</span>
+                                </div>
+                                <div style="background:#eef2f7; padding:15px; border-radius:10px; margin-bottom:15px; font-size:14px; color:#2c3e50; line-height: 1.5;">
+                                    <p><strong>📍 Dirección de entrega:</strong> ${p.direccion}</p>
+                                    <p><strong>💵 Método de Pago:</strong> ${p.metodo_pago}</p>
+                                    <p><strong>💰 Total del Pedido:</strong> <span style="font-weight:bold; color:#D4AF37; font-size: 15px;">S/ ${parseFloat(p.total).toFixed(2)}</span></p>
+                                    <p><strong>🛵 Repartidor Asignado:</strong> <span id="repartidor_nombre_${id_pedido}" style="font-weight: 600; color: #0A2E5C;">${p.repartidor_nombre || 'Buscando un repartidor disponible...'}</span></p>
+                                </div>
+                                
+                                <div class="stepper" id="stepper_${id_pedido}">
+                                    ${getStepperHTML(p.id_estado)}
+                                </div>
+
+                                <div id="mapContainer_${id_pedido}" style="height: 350px; width: 100%; border-radius: 12px; margin: 15px 0; border: 1px solid #cbd5e1; z-index: 1;"></div>
+                            `;
+                            container.appendChild(card);
+
+                            // Inicializar Leaflet map con un mini timeout para que el div esté renderizado
+                            setTimeout(function() {
+                                var map = L.map('mapContainer_' + id_pedido);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; OpenStreetMap contributors'
+                                }).addTo(map);
+
+                                var clientMarker = L.marker([clienteLat, clienteLng], {icon: houseIcon})
+                                    .addTo(map)
+                                    .bindPopup("🏠 Tu punto de entrega");
+
+                                var riderMarker = null;
+                                var polyline = null;
+
+                                if (repLat && repLng) {
+                                    riderMarker = L.marker([repLat, repLng], {icon: motoIcon})
+                                        .addTo(map)
+                                        .bindPopup("🛵 Repartidor en camino");
+
+                                    polyline = L.polyline([[clienteLat, clienteLng], [repLat, repLng]], {
+                                        color: '#6c5ce7',
+                                        weight: 4,
+                                        dashArray: '6, 12'
+                                    }).addTo(map);
+
+                                    map.fitBounds([[clienteLat, clienteLng], [repLat, repLng]], {padding: [50, 50]});
+                                } else {
+                                    map.setView([clienteLat, clienteLng], 15);
+                                    clientMarker.openPopup();
+                                }
+
+                                window.leafletMaps[id_pedido] = {
+                                    map: map,
+                                    clientMarker: clientMarker,
+                                    riderMarker: riderMarker,
+                                    polyline: polyline
+                                };
+                            }, 150);
+                        } else {
+                            // Actualizar textos y clases en tarjeta existente
+                            var badge = document.getElementById('badge_' + id_pedido);
+                            badge.textContent = p.nombre_estado;
+                            badge.className = 'status-badge badge-' + p.id_estado;
+
+                            var repNameSpan = document.getElementById('repartidor_nombre_' + id_pedido);
+                            repNameSpan.textContent = p.repartidor_nombre || 'Buscando un repartidor disponible...';
+
+                            var stepper = document.getElementById('stepper_' + id_pedido);
+                            stepper.innerHTML = getStepperHTML(p.id_estado);
+
+                            // Actualizar Mapa Leaflet sin recrearlo
+                            var mapObj = window.leafletMaps[id_pedido];
+                            if (mapObj) {
+                                var map = mapObj.map;
+
+                                // Mover marcador de cliente si cambió
+                                mapObj.clientMarker.setLatLng([clienteLat, clienteLng]);
+
+                                if (repLat && repLng) {
+                                    if (!mapObj.riderMarker) {
+                                        mapObj.riderMarker = L.marker([repLat, repLng], {icon: motoIcon})
+                                            .addTo(map)
+                                            .bindPopup("🛵 Repartidor en camino");
+
+                                        mapObj.polyline = L.polyline([[clienteLat, clienteLng], [repLat, repLng]], {
+                                            color: '#6c5ce7',
+                                            weight: 4,
+                                            dashArray: '6, 12'
+                                        }).addTo(map);
+                                    } else {
+                                        mapObj.riderMarker.setLatLng([repLat, repLng]);
+                                        mapObj.polyline.setLatLngs([[clienteLat, clienteLng], [repLat, repLng]]);
+                                    }
+                                    
+                                    // Ajustar encuadre para ver ambos marcadores en pantalla
+                                    map.fitBounds([[clienteLat, clienteLng], [repLat, repLng]], {padding: [50, 50]});
+                                } else {
+                                    // Si no hay repartidor (o fue removido), quitar marcador y polyline si existían
+                                    if (mapObj.riderMarker) {
+                                        map.removeLayer(mapObj.riderMarker);
+                                        mapObj.riderMarker = null;
+                                    }
+                                    if (mapObj.polyline) {
+                                        map.removeLayer(mapObj.polyline);
+                                        mapObj.polyline = null;
+                                    }
+                                    map.setView([clienteLat, clienteLng], 15);
+                                }
+                            }
+                        }
+                    });
+
+                    // Limpiar tarjetas antiguas de pedidos que ya no están en la respuesta
+                    var cards = container.querySelectorAll('.card');
+                    cards.forEach(function(c) {
+                        var idMatch = c.id.match(/^order_card_(\d+)$/);
+                        if (idMatch) {
+                            var orderId = parseInt(idMatch[1]);
+                            if (!activeIds[orderId]) {
+                                c.remove();
+                                if (window.leafletMaps[orderId]) {
+                                    window.leafletMaps[orderId].map.remove();
+                                    delete window.leafletMaps[orderId];
+                                }
+                            }
+                        }
+                    });
+
+                }).catch(function(err) {
+                    console.error('Error al cargar pedidos:', err);
+                });
         }
 
         loadPedidos();
-        setInterval(loadPedidos, 8000);
+        // Recargar cada 6 segundos para mantener un tracking dinámico y fresco
+        setInterval(loadPedidos, 6000);
     </script>
 </body>
 </html>
