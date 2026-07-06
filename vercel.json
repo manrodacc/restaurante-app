@@ -1,18 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/pedidos/:id/estado",
-      "destination": "/api/pedidos/[id]/estado"
-    },
-    {
-      "source": "/api/pedidos/:id/asignar",
-      "destination": "/api/pedidos/[id]/asignar"
-    },
-    {
-      "source": "/api/pedidos/:id",
-      "destination": "/api/pedidos/[id]"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

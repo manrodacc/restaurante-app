@@ -374,7 +374,7 @@
             const id_repartidor = document.getElementById('repartidorSelect').value;
             if (!id_repartidor) return alert('Selecciona un repartidor');
             try {
-                const res = await fetch(`/api/pedidos/${currentPedidoId}/asignar`, {
+                const res = await fetch(`/api/pedidos?id=${currentPedidoId}&action=asignar`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id_repartidor: parseInt(id_repartidor) })
@@ -395,7 +395,7 @@
         async function confirmState() {
             const id_estado = document.getElementById('stateSelect').value;
             try {
-                const res = await fetch(`/api/pedidos/${currentPedidoId}/estado`, {
+                const res = await fetch(`/api/pedidos?id=${currentPedidoId}&action=estado`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id_estado: parseInt(id_estado) })
